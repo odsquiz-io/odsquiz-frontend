@@ -1,5 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
+import { ThemeToggle } from "./ThemeToggle";
+import headerLogo from "../public/ods-quiz-wordmark-transparent.png";
 
 const navItems = [
   { label: "Home", href: "#" },
@@ -9,18 +11,18 @@ const navItems = [
 
 export function Header() {
   return (
-    <header className="absolute inset-x-0 top-0 z-20 w-full px-4 pt-4">
-      <nav className="mx-auto flex h-20 max-w-7xl items-center justify-between rounded-md border border-slate-800 bg-[#0b1220] px-8">
+    <header className="absolute inset-x-0 top-0 z-20 w-full px-[var(--size-header-padding-x)] pt-[var(--size-header-offset)]">
+      <nav className="mx-auto flex h-[var(--size-header-nav-height)] max-w-[var(--size-header-nav-max-width)] items-center justify-between rounded-[var(--size-header-nav-radius)] border border-[var(--color-header-border)] bg-[var(--color-header-background)] px-[var(--size-header-nav-padding-x)]">
         <Link href="/" className="flex items-center" aria-label="ODSQuiz home">
           <Logo />
         </Link>
 
-        <div className="hidden items-center gap-12 md:flex">
+        <div className="hidden items-center gap-[var(--size-header-link-gap)] md:flex">
           {navItems.map((item) => (
             <Link
               key={item.label}
               href={item.href}
-              className="text-base font-semibold text-white transition hover:text-indigo-400"
+              className="text-[length:var(--size-header-link-text)] font-semibold text-[var(--color-app-foreground)] transition hover:text-[var(--color-link-hover)]"
             >
               {item.label}
             </Link>
@@ -28,11 +30,13 @@ export function Header() {
 
           <Link
             href="#"
-            className="text-base font-semibold text-white transition hover:text-indigo-400"
+            className="text-[length:var(--size-header-link-text)] font-semibold text-[var(--color-app-foreground)] transition hover:text-[var(--color-link-hover)]"
           >
             Log in <span aria-hidden="true"></span>
           </Link>
         </div>
+
+        <ThemeToggle />
       </nav>
     </header>
   );
@@ -41,12 +45,10 @@ export function Header() {
 function Logo() {
   return (
     <Image
-      src="/ods-quiz-wordmark-transparent.png"
+      src={headerLogo}
       alt="ODS Quiz"
-      width={96}
-      height={48}
       priority
-      className="h-12 w-auto brightness-0 invert"
+      className="h-[var(--size-header-logo-height)] w-[var(--size-header-logo-width)] object-contain [filter:var(--filter-header-logo)]"
     />
   );
 }

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import Script from "next/script";
 import "./globals.css";
 
 const sfProText = localFont({
@@ -38,13 +39,50 @@ export const metadata: Metadata = {
   description: "Developed by Serra Hackclub, remastered by Kauan Peçanha",
 };
 
+const themeScript = `
+(() => {
+  try {
+    const storageKey = "odsquiz-theme";
+    const savedTheme = window.localStorage.getItem(storageKey);
+    const theme = savedTheme === "dark" || savedTheme === "light"
+      ? savedTheme
+      : window.matchMedia("(prefers-color-scheme: light)").matches
+        ? "light"
+        : "dark";
+
+    const root = document.documentElement;
+
+    root.dataset.theme = theme;
+    root.classList.toggle("light", theme === "light");
+    root.classList.toggle("dark", theme === "dark");
+  } catch {
+    const root = document.documentElement;
+
+    root.dataset.theme = "dark";
+    root.classList.add("dark");
+    root.classList.remove("light");
+  }
+})();
+`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${sfProText.variable} h-full antialiased`}>
+    <html
+      lang="en"
+      className={`${sfProText.variable} h-full antialiased`}
+      suppressHydrationWarning
+    >
+      <head>
+        <Script
+          id="theme-script"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{ __html: themeScript }}
+        />
+      </head>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );

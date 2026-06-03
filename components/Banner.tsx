@@ -1,41 +1,39 @@
 import Image from "next/image";
+import sdgCircle from "../public/sdg-circle.png";
+import bannerWordmark from "../public/odsquiz-logo-words-only.png";
 
 export function Banner() {
   return (
-    <section className="flex min-h-[calc(100vh-20rem)] items-center justify-center bg-transparent px-6">
-      <div className="flex w-full max-w-5xl items-center justify-center gap-12">
-        <div className="relative flex h-64 w-64 shrink-0 items-center justify-center">
+    <section className="flex min-h-[calc(100vh_-_var(--size-banner-height-offset))] items-center justify-center bg-transparent px-[var(--size-banner-padding-x)]">
+      <div className="flex w-full max-w-[var(--size-banner-content-max-width)] items-center justify-center gap-[var(--size-banner-content-gap)]">
+        <div className="relative flex h-[var(--size-banner-circle)] w-[var(--size-banner-circle)] shrink-0 items-center justify-center">
           <Image
-            src="/sdg-circle.png"
+            src={sdgCircle}
             alt="ODS circle"
-            width={256}
-            height={256}
             priority
             className="absolute inset-0 h-full w-full animate-spin-slow object-contain"
           />
 
           <Image
-            src="/odsquiz-logo-words-only.png"
+            src={bannerWordmark}
             alt="ODS Quiz"
-            width={95}
-            height={70}
             priority
-            className="relative z-10 h-auto w-[75%] object-contain"
+            className="relative z-10 h-auto w-[var(--size-banner-wordmark-width)] object-contain"
           />
         </div>
 
-        <div className="max-w-xl text-center">
-          <h1 className="mx-auto max-w-[560px] text-3xl font-extrabold leading-tight tracking-wide text-white">
+        <div className="max-w-[var(--size-banner-copy-max-width)] text-center">
+          <h1 className="mx-auto max-w-[var(--size-banner-title-max-width)] text-[length:var(--size-banner-title-text)] font-extrabold leading-[var(--size-banner-title-line-height)] tracking-wide text-[var(--color-app-foreground)]">
             Descubra o quanto a sua comunidade progride para o desenvolvimento
             sustentável no Brasil
           </h1>
 
-          <p className="mt-4 text-xl text-white">
+          <p className="mt-[var(--size-banner-body-margin-top)] text-[length:var(--size-banner-body-text)] text-[var(--color-app-foreground)]">
             Responda algumas perguntas e descubra o quanto a sua comunidade
             progride nos ODS.
           </p>
 
-          <button className="mt-6 rounded-md border border-white px-4 py-2 text-sm font-bold text-white transition hover:bg-white hover:text-slate-950">
+          <button className="mt-[var(--size-banner-button-margin-top)] rounded-[var(--size-banner-button-radius)] border border-[var(--color-app-foreground)] px-[var(--size-banner-button-padding-x)] py-[var(--size-banner-button-padding-y)] text-[length:var(--size-banner-button-text)] font-bold text-[var(--color-app-foreground)] transition hover:bg-[var(--color-app-foreground)] hover:text-[var(--color-button-hover-text)]">
             Responder agora
           </button>
         </div>
