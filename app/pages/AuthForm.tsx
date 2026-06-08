@@ -42,13 +42,11 @@ function getApiBaseUrl() {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
   if (!apiUrl) {
-    throw new Error("Missing NEXT_PUBLIC_API_URL environment variable.");
+    return undefined;
   }
 
   return apiUrl.replace(/\/$/, "");
 }
-
-const apiBaseUrl = getApiBaseUrl();
 
 const duplicateEmailMessage = "A user already exists with that email.";
 const invalidCredentialsMessage = "Invalid email or password.";
@@ -249,6 +247,14 @@ export function AuthForm({ mode }: AuthFormProps) {
 
     setFieldErrors({});
     setStatus("submitting");
+
+    const apiBaseUrl = getApiBaseUrl();
+
+    if (!apiBaseUrl) {
+      setStatus("idle");
+      setMessage("The authentication service is not configured.");
+      return;
+    }
 
     const body = isSignup
       ? { name, email, password, address }
