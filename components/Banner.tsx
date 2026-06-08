@@ -4,8 +4,8 @@ import bannerWordmark from "../public/odsquiz-logo-words-only.png";
 
 export function Banner() {
   return (
-    <section className="flex min-h-[calc(100vh_-_var(--size-banner-height-offset))] items-center justify-center bg-transparent px-[var(--size-banner-padding-x)]">
-      <div className="flex w-full max-w-[var(--size-banner-content-max-width)] items-center justify-center gap-[var(--size-banner-content-gap)]">
+    <section className="flex min-h-screen items-center justify-center bg-transparent px-[var(--size-banner-padding-x)] pb-14 pt-32 sm:pt-36 md:min-h-[calc(100vh_-_var(--size-banner-height-offset))] md:pb-16">
+      <div className="flex w-full max-w-[var(--size-banner-content-max-width)] flex-col items-center justify-center gap-8 md:flex-row md:gap-[var(--size-banner-content-gap)]">
         <div className="relative flex h-[var(--size-banner-circle)] w-[var(--size-banner-circle)] shrink-0 items-center justify-center">
           <Image
             src={sdgCircle}
@@ -33,7 +33,7 @@ export function Banner() {
             progride nos ODS.
           </p>
 
-          <button className="mt-[var(--size-banner-button-margin-top)] rounded-[var(--size-banner-button-radius)] border border-[var(--color-app-foreground)] px-[var(--size-banner-button-padding-x)] py-[var(--size-banner-button-padding-y)] text-[length:var(--size-banner-button-text)] font-bold text-[var(--color-app-foreground)] transition hover:bg-[var(--color-app-foreground)] hover:text-[var(--color-button-hover-text)]">
+          <button className="mt-[var(--size-banner-button-margin-top)] min-h-11 w-full rounded-[var(--size-banner-button-radius)] border border-[var(--color-app-foreground)] px-[var(--size-banner-button-padding-x)] py-[var(--size-banner-button-padding-y)] text-[length:var(--size-banner-button-text)] font-bold text-[var(--color-app-foreground)] transition hover:bg-[var(--color-app-foreground)] hover:text-[var(--color-button-hover-text)] sm:w-auto">
             Responder agora
           </button>
         </div>

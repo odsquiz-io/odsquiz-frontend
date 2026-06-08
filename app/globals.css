@@ -117,3 +117,25 @@ body {
     background-color 180ms ease,
     color 180ms ease;
 }
+
+@media (max-width: 767px) {
+  :root {
+    --size-header-offset: 0.75rem;
+    --size-header-padding-x: 0.75rem;
+    --size-header-nav-height: 4rem;
+    --size-header-nav-padding-x: 0.875rem;
+    --size-header-logo-width: 5.25rem;
+    --size-header-logo-height: 2.625rem;
+    --size-header-link-text: 0.9375rem;
+
+    --size-banner-padding-x: 1rem;
+    --size-banner-content-gap: 2rem;
+    --size-banner-circle: min(13rem, 64vw);
+    --size-banner-wordmark-width: 72%;
+    --size-banner-title-text: 1.7rem;
+    --size-banner-title-line-height: 1.16;
+    --size-banner-body-text: 1rem;
+    --size-banner-button-padding-x: 1rem;
+    --size-banner-button-padding-y: 0.625rem;
+  }
+}
