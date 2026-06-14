@@ -39,7 +39,8 @@ type ApiErrorResult = {
 };
 
 function getApiBaseUrl() {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  const apiUrl =
+    process.env.NEXT_PUBLIC_AUTH_API_URL ?? process.env.NEXT_PUBLIC_API_URL;
 
   if (!apiUrl) {
     return undefined;

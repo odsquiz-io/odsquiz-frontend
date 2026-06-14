@@ -9,7 +9,7 @@ import headerLogo from "../public/ods-quiz-wordmark-transparent.png";
 const navItems = [
   { label: "Home", href: "/" },
   { label: "Termômetro", href: "#" },
-  { label: "Iniciativas", href: "#" },
+  { label: "Iniciativas", href: "/iniciativas" },
 ];
 
 export function Header() {
