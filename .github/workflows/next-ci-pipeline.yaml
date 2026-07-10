@@ -9,5 +9,5 @@ permissions:
   contents: read
 jobs:
   config:
-    uses: kauanpecanha/odsquiz-workflows/.github/workflows/next-ci-pipeline.yaml@main
+    uses: odsquiz-io/odsquiz-workflows/.github/workflows/next-ci-pipeline.yaml@main
     
