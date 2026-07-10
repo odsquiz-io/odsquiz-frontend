@@ -3,11 +3,37 @@ name: Next CI Pipeline
 on:
   pull_request:
     types: [opened, reopened, synchronize]
-  push: 
+    paths:
+      - 'app/**'
+      - 'pages/**'
+      - 'components/**'
+      - 'public/**'
+      - 'styles/**'
+      - 'src/**'
+      - 'next.config.*'
+      - 'next-env.d.ts'
+      - 'package.json'
+      - 'tsconfig.json'
+      - 'postcss.config.*'
+      - 'tailwind.config.*'
+  push:
     branches: [master, develop]
+    paths:
+      - 'app/**'
+      - 'pages/**'
+      - 'components/**'
+      - 'public/**'
+      - 'styles/**'
+      - 'src/**'
+      - 'next.config.*'
+      - 'next-env.d.ts'
+      - 'package.json'
+      - 'tsconfig.json'
+      - 'postcss.config.*'
+      - 'tailwind.config.*'
 permissions:
   contents: read
 jobs:
   config:
-    uses: kauanpecanha/odsquiz-workflows/.github/workflows/next-ci-pipeline.yaml@main
+    uses: odsquiz-io/odsquiz-workflows/.github/workflows/next-ci-pipeline.yaml@main
     
