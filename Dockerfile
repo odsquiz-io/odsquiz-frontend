@@ -50,6 +50,11 @@ COPY --from=builder /app/package.json ./package.json
 # Copy node_modules from deps to avoid reinstalling during image build
 COPY --from=deps /app/node_modules ./node_modules
 
+# Ensure .next cache exists and is writable by the runtime user
+RUN mkdir -p /app/.next/cache \
+  && chown -R node:node /app \
+  && chmod -R u+rwX /app/.next
+
 # Use non-root user when available
 USER node
 EXPOSE 3000
