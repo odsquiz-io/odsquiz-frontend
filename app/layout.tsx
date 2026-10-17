@@ -1,46 +1,24 @@
 import type { Metadata } from "next";
-import localFont from "next/font/local";
+import { Bricolage_Grotesque, Lexend } from "next/font/google";
 import Script from "next/script";
 import { SessionProvider } from "@/components/SessionProvider";
 import "./globals.css";
 
-const sfProText = localFont({
-  variable: "--font-sf-pro-text",
-  src: [
-    {
-      path: "../public/fonts/SF-Pro-Text-Regular.otf",
-      weight: "400",
-      style: "normal",
-    },
-    {
-      path: "../public/fonts/SF-Pro-Text-Medium.otf",
-      weight: "500",
-      style: "normal",
-    },
-    {
-      path: "../public/fonts/SF-Pro-Text-Semibold.otf",
-      weight: "600",
-      style: "normal",
-    },
-    {
-      path: "../public/fonts/SF-Pro-Text-Bold.otf",
-      weight: "700",
-      style: "normal",
-    },
-    {
-      path: "../public/fonts/SF-Pro-Text-Heavy.otf",
-      weight: "800",
-      style: "normal",
-    },
-  ],
+const lexend = Lexend({
+  subsets: ["latin"],
+  variable: "--font-lexend",
+});
+
+const bricolage = Bricolage_Grotesque({
+  subsets: ["latin"],
+  axes: ["opsz", "wdth"],
+  variable: "--font-bricolage",
 });
 
 export const metadata: Metadata = {
   title: "ODS Quiz",
-  description: "Developed by Serra Hackclub, remastered by Kauan Peçanha",
-  icons: {
-    icon: "/odsquiz-logo.png",
-  },
+  description:
+    "Descubra como a sua comunidade se relaciona com os 17 Objetivos de Desenvolvimento Sustentável da ONU e encontre iniciativas locais que já fazem a diferença.",
 };
 
 const themeScript = `
@@ -76,8 +54,8 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
-      className={`${sfProText.variable} h-full antialiased`}
+      lang="pt-BR"
+      className={`${lexend.variable} ${bricolage.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <head>
