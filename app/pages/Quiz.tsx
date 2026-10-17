@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { Header } from "@/components/Header";
+import { odsNames } from "./ods";
 import {
   fetchQuizQuestions,
   getServerAuthToken,
@@ -11,24 +12,6 @@ import {
   subscribeToAuthToken,
 } from "./quiz/api";
 import type { QuizQuestion, QuizResult, QuizStatus } from "./quiz/types";
-
-const odsNames: Record<number, string> = {
-  1: "Erradicação da pobreza",
-  2: "Fome zero",
-  3: "Saúde e bem-estar",
-  4: "Educação de qualidade",
-  5: "Igualdade de gênero",
-  6: "Água potável e saneamento",
-  7: "Energia limpa",
-  8: "Trabalho decente",
-  10: "Redução das desigualdades",
-  11: "Cidades sustentáveis",
-  12: "Consumo responsável",
-  13: "Ação climática",
-  14: "Vida na água",
-  15: "Vida terrestre",
-  16: "Paz e justiça",
-};
 
 export default function Quiz() {
   const token = useSyncExternalStore(
