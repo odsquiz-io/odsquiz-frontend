@@ -11,6 +11,16 @@ type BrasilApiCepResponse = {
   location?: { coordinates?: { latitude?: number | string; longitude?: number | string } };
 };
 
+type AwesomeApiCepResponse = {
+  cep?: string;
+  state?: string;
+  city?: string;
+  district?: string;
+  address?: string;
+  lat?: string;
+  lng?: string;
+};
+
 type NominatimSearchResult = { lat?: string; lon?: string };
 
 export function getStoredAuthToken() {
@@ -34,6 +44,14 @@ export async function fetchInitiatives(token: string) {
   );
 
   return initiativesFrom(payload);
+}
+
+export async function fetchInitiative(token: string, id: string) {
+  return (await request(
+    `/api/initiatives/${encodeURIComponent(id)}`,
+    { headers: authHeader(token) },
+    "Não foi possível carregar a iniciativa.",
+  )) as Initiative;
 }
 
 export async function createInitiative(
@@ -71,30 +89,15 @@ export async function lookupAddressByCep(cep: string) {
     throw new Error("Informe um CEP com 8 números.");
   }
 
-  const response = await fetch(`${getBrasilApiCepBaseUrl()}/${normalizedCep}`);
+  const lookup =
+    (await lookupAwesomeApiCep(normalizedCep)) ??
+    (await lookupBrasilApiCep(normalizedCep));
 
-  if (!response.ok) {
+  if (!lookup) {
     throw new Error("Não foi possível encontrar esse CEP.");
   }
 
-  const payload = (await response.json()) as BrasilApiCepResponse;
-  const address = joinAddress(payload.street, payload.neighborhood, cityState(payload));
-
-  return {
-    address,
-    cep: payload.cep ?? normalizedCep,
-    coordinates: coordinatesFrom(
-      payload.location?.coordinates?.latitude,
-      payload.location?.coordinates?.longitude,
-    ),
-    geocodingQuery: joinAddress(
-      address,
-      payload.cep ?? normalizedCep,
-      payload.city,
-      payload.state,
-      "Brasil",
-    ),
-  };
+  return lookup;
 }
 
 export async function geocodeAddress(query: string) {
@@ -109,8 +112,51 @@ export async function geocodeAddress(query: string) {
   return coordinatesFrom(firstResult?.lat, firstResult?.lon);
 }
 
-export function buildGeocodingQuery(form: InitiativeFormState) {
-  return joinAddress(form.address.trim(), form.cep.trim(), "Brasil");
+async function lookupAwesomeApiCep(cep: string) {
+  const response = await fetch(`${getAwesomeApiCepBaseUrl()}/${cep}`).catch(
+    () => undefined,
+  );
+
+  if (!response?.ok) {
+    return undefined;
+  }
+
+  const payload = (await response.json()) as AwesomeApiCepResponse;
+  const address = joinAddress(payload.address, payload.district, cityState(payload));
+
+  return {
+    address,
+    cep: payload.cep ?? cep,
+    coordinates: coordinatesFrom(payload.lat, payload.lng),
+    geocodingQuery: joinAddress(address, payload.cep ?? cep, "Brasil"),
+  };
+}
+
+async function lookupBrasilApiCep(cep: string) {
+  const response = await fetch(`${getBrasilApiCepBaseUrl()}/${cep}`);
+
+  if (!response.ok) {
+    return undefined;
+  }
+
+  const payload = (await response.json()) as BrasilApiCepResponse;
+  const address = joinAddress(payload.street, payload.neighborhood, cityState(payload));
+
+  return {
+    address,
+    cep: payload.cep ?? cep,
+    coordinates: coordinatesFrom(
+      payload.location?.coordinates?.latitude,
+      payload.location?.coordinates?.longitude,
+    ),
+    geocodingQuery: joinAddress(
+      address,
+      payload.cep ?? cep,
+      payload.city,
+      payload.state,
+      "Brasil",
+    ),
+  };
 }
 
 async function request(url: string, init: RequestInit, fallbackMessage: string) {
@@ -140,6 +186,13 @@ function apiMessage(payload: unknown, fallback: string) {
     : isRecord(payload) && typeof payload.error === "string"
       ? payload.error
       : fallback;
+}
+
+function getAwesomeApiCepBaseUrl() {
+  return (
+    process.env.NEXT_PUBLIC_AWESOME_API_CEP_URL ??
+    "https://cep.awesomeapi.com.br/json"
+  ).replace(/\/$/, "");
 }
 
 function getBrasilApiCepBaseUrl() {
@@ -214,7 +267,7 @@ function joinAddress(...parts: Array<string | undefined>) {
   return parts.filter(Boolean).join(", ");
 }
 
-function cityState(payload: BrasilApiCepResponse) {
+function cityState(payload: { city?: string; state?: string }) {
   return payload.city && payload.state
     ? `${payload.city} - ${payload.state}`
     : payload.city;

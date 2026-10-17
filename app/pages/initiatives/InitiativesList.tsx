@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+import { InitiativeLinks } from "./InitiativeLinks";
 import type { Initiative, ListStatus } from "./types";
 
 type InitiativesListProps = {
@@ -37,7 +39,12 @@ export function InitiativesList({
             <InitiativeCard
               key={initiative.id ?? `${initiative.name}-${index}`}
               initiative={initiative}
-            />
+            >
+              <InitiativeLinks
+                id={initiative.id}
+                className="text-sm font-semibold text-[var(--color-link-hover)] hover:underline"
+              />
+            </InitiativeCard>
           ))}
         </div>
       ) : null}
@@ -69,7 +76,13 @@ function ListFeedback({
   return null;
 }
 
-function InitiativeCard({ initiative }: { initiative: Initiative }) {
+export function InitiativeCard({
+  children,
+  initiative,
+}: {
+  children?: ReactNode;
+  initiative: Initiative;
+}) {
   const items: Array<[string, string | undefined]> = [
     ["Área", initiative.acting_area],
     ["Endereço", initiative.address],
@@ -102,6 +115,8 @@ function InitiativeCard({ initiative }: { initiative: Initiative }) {
           <InfoItem key={label} label={label} value={value} />
         ))}
       </dl>
+
+      {children}
     </article>
   );
 }
@@ -119,7 +134,7 @@ function InfoItem({ label, value }: { label: string; value?: string }) {
   );
 }
 
-function Feedback({
+export function Feedback({
   children,
   tone = "default",
 }: {
