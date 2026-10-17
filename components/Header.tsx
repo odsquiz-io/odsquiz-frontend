@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
 import { ThemeToggle } from "./ThemeToggle";
+import { useSession } from "./SessionProvider";
 import headerLogo from "../public/ods-quiz-wordmark-transparent.png";
 
 const navItems = [
@@ -33,6 +34,9 @@ export function Header() {
           </div>
 
           <div className="flex shrink-0 items-center gap-2">
+            <div className="hidden md:flex">
+              <AuthArea />
+            </div>
             <ThemeToggle />
             <button
               type="button"
@@ -69,6 +73,9 @@ export function Header() {
           >
             <div className="flex flex-col">
               <NavLinks onNavigate={() => setIsMenuOpen(false)} />
+              <div className="mt-1 px-2">
+                <AuthArea onNavigate={() => setIsMenuOpen(false)} />
+              </div>
             </div>
           </div>
         ) : null}
@@ -90,15 +97,65 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
           {item.label}
         </Link>
       ))}
+    </>
+  );
+}
 
+function AuthArea({ onNavigate }: { onNavigate?: () => void }) {
+  const { status, user, signOut } = useSession();
+
+  // Keeps the server markup and the first client render identical.
+  if (status === "loading") {
+    return null;
+  }
+
+  if (!user) {
+    return (
       <Link
         href="/login"
         onClick={onNavigate}
         className="rounded-md px-2 py-3 text-[length:var(--size-header-link-text)] font-semibold text-[var(--color-app-foreground)] transition hover:text-[var(--color-link-hover)] md:px-0 md:py-0"
       >
-        Login
+        Faça seu login
       </Link>
-    </>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <span
+        title={user.name}
+        className="max-w-[12rem] truncate text-[length:var(--size-header-link-text)] font-semibold text-[var(--color-app-foreground)]"
+      >
+        Olá, {user.name}!
+      </span>
+
+      <button
+        type="button"
+        onClick={() => {
+          signOut();
+          onNavigate?.();
+        }}
+        aria-label="Sign out"
+        title="Sign out"
+        className="grid h-[2.5rem] w-[2.5rem] shrink-0 place-items-center rounded-[var(--size-theme-toggle-radius)] border border-[var(--color-header-border)] bg-[var(--color-theme-toggle-background)] text-[var(--color-app-foreground)] transition hover:border-[var(--color-link-hover)] hover:bg-[var(--color-theme-toggle-hover)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-header-background)]"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="h-[1.125rem] w-[1.125rem]"
+          aria-hidden="true"
+        >
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+          <polyline points="16 17 21 12 16 7" />
+          <line x1="21" y1="12" x2="9" y2="12" />
+        </svg>
+      </button>
+    </div>
   );
 }
 

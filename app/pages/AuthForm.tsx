@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { SyntheticEvent } from "react";
 import { useState } from "react";
+import { storeAuthToken } from "@/components/SessionProvider";
 
 type AuthMode = "login" | "signup";
 
@@ -265,7 +266,9 @@ export function AuthForm({ mode }: AuthFormProps) {
       const token = authPayload.token ?? authPayload.access_token;
 
       if (token) {
-        window.localStorage.setItem("odsquiz-auth-token", token);
+        // Goes through the helper so the session provider picks it up in this
+        // same tab, not only after a reload.
+        storeAuthToken(token);
       }
 
       setStatus("success");
