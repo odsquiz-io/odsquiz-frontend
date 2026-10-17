@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { Header } from "@/components/Header";
 import {
@@ -11,7 +11,13 @@ import {
 } from "./initiatives/api";
 import { InitiativeForm } from "./initiatives/InitiativeForm";
 import { InitiativesList } from "./initiatives/InitiativesList";
+import { LoginRequired } from "./initiatives/LoginRequired";
 import type { Initiative, ListStatus } from "./initiatives/types";
+
+const InitiativesMap = dynamic(
+  () => import("./initiatives/InitiativesMap").then((mod) => mod.InitiativesMap),
+  { ssr: false },
+);
 
 export default function Initiatives() {
   const token = useSyncExternalStore(
@@ -83,9 +89,12 @@ export default function Initiatives() {
         </div>
 
         {!token ? (
-          <LoginRequired />
+          <LoginRequired message="Entre na sua conta para cadastrar uma nova iniciativa." />
         ) : (
           <>
+            <div className="mb-8 h-96">
+              <InitiativesMap initiatives={initiatives} />
+            </div>
             <InitiativeForm token={token} onCreated={reloadInitiatives} />
             <InitiativesList
               initiatives={initiatives}
@@ -97,22 +106,5 @@ export default function Initiatives() {
         )}
       </section>
     </main>
-  );
-}
-
-function LoginRequired() {
-  return (
-    <div className="rounded-lg border border-[var(--color-header-border)] bg-[var(--color-header-background)] p-5 text-[var(--color-app-foreground)] shadow-2xl shadow-black/20">
-      <h2 className="text-xl font-bold">Login necessário</h2>
-      <p className="mt-2 text-sm">
-        Entre na sua conta para cadastrar uma nova iniciativa.
-      </p>
-      <Link
-        href="/login"
-        className="mt-5 inline-flex min-h-11 items-center rounded-md border border-[var(--color-app-foreground)] px-4 text-sm font-bold text-[var(--color-app-foreground)] transition hover:bg-[var(--color-app-foreground)] hover:text-[var(--color-button-hover-text)]"
-      >
-        Fazer login
-      </Link>
-    </div>
   );
 }

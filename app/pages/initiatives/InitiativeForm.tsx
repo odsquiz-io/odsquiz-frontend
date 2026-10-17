@@ -1,11 +1,7 @@
+import dynamic from "next/dynamic";
 import type { ReactNode, SyntheticEvent } from "react";
 import { useState } from "react";
-import {
-  buildGeocodingQuery,
-  createInitiative,
-  geocodeAddress,
-  lookupAddressByCep,
-} from "./api";
+import { createInitiative, geocodeAddress, lookupAddressByCep } from "./api";
 import type {
   CepLookupStatus,
   Coordinates,
@@ -15,6 +11,11 @@ import type {
   SubmitStatus,
 } from "./types";
 import { initialFormState, validateInitiativeForm } from "./validation";
+
+const LocationMap = dynamic(
+  () => import("./InitiativesMap").then((mod) => mod.LocationMap),
+  { ssr: false },
+);
 
 type FieldConfig = {
   autoComplete?: string;
@@ -88,7 +89,7 @@ export function InitiativeForm({
   function updateField(field: InitiativeFormField, value: string) {
     setForm((currentForm) => ({ ...currentForm, [field]: value }));
 
-    if (field === "address" || field === "cep") {
+    if (field === "cep") {
       setCoordinates(null);
       setCepLookupStatus("idle");
       setGeoMessage("");
@@ -104,6 +105,7 @@ export function InitiativeForm({
   async function handleCepLookup() {
     setMessage("");
     setGeoMessage("");
+    setCoordinates(null);
     setCepLookupStatus("loading");
 
     try {
@@ -129,8 +131,8 @@ export function InitiativeForm({
       setCepLookupStatus(nextCoordinates ? "success" : "error");
       setGeoMessage(
         nextCoordinates
-          ? "Endereço e coordenadas encontrados pelo CEP."
-          : "Endereço encontrado, mas não foi possível obter as coordenadas. Ajuste o endereço e tente cadastrar novamente.",
+          ? "Confira o marcador no mapa e arraste-o até o local exato, se necessário."
+          : "Endereço encontrado, mas não foi possível localizá-lo no mapa.",
       );
     } catch (error) {
       setCoordinates(null);
@@ -156,23 +158,16 @@ export function InitiativeForm({
       return;
     }
 
+    if (!coordinates) {
+      setFieldErrors({ cep: "Busque o CEP para marcar a iniciativa no mapa." });
+      return;
+    }
+
     setStatus("submitting");
     setFieldErrors({});
 
     try {
-      const nextCoordinates =
-        coordinates ?? (await geocodeAddress(buildGeocodingQuery(form)));
-
-      if (!nextCoordinates) {
-        setFieldErrors({
-          address:
-            "Não foi possível obter as coordenadas pelo CEP/endereço. Confira os dados e tente novamente.",
-        });
-        setGeoMessage("");
-        return;
-      }
-
-      await createInitiative(form, nextCoordinates, token);
+      await createInitiative(form, coordinates, token);
       setStatus("success");
       setForm(initialFormState);
       setCoordinates(null);
@@ -223,6 +218,12 @@ export function InitiativeForm({
           >
             {geoMessage}
           </p>
+        ) : null}
+
+        {coordinates ? (
+          <div className="h-64 md:col-span-2">
+            <LocationMap coordinates={coordinates} onChange={setCoordinates} />
+          </div>
         ) : null}
       </div>
 
