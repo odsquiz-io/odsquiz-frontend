@@ -8,7 +8,7 @@ import { useSession } from "./SessionProvider";
 import headerLogo from "../public/ods-quiz-wordmark-transparent.png";
 
 const navItems = [
-  { label: "Home", href: "/" },
+  { label: "Início", href: "/" },
   { label: "Quiz", href: "/quiz" },
   { label: "Iniciativas", href: "/initiatives" },
 ];

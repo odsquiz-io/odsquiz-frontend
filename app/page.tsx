@@ -1,11 +1,5 @@
-import { Header } from "@/components/Header";
-import { Banner } from "@/components/Banner";
+import Home from "./pages/Home";
 
-export default function Home() {
-  return (
-    <main className="relative min-h-screen bg-[var(--color-app-background)] transition-colors">
-      <Header />
-      <Banner />
-    </main>
-  );
-}
+export const revalidate = 3600;
+
+export default Home;
