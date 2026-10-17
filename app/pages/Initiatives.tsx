@@ -1,30 +1,23 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useState } from "react";
 import { Header } from "@/components/Header";
-import {
-  fetchInitiatives,
-  getServerAuthToken,
-  getStoredAuthToken,
-  subscribeToAuthToken,
-} from "./initiatives/api";
+import { LoginRequired } from "@/components/LoginRequired";
+import { useAuthToken } from "@/lib/auth";
+import { fetchInitiatives } from "./initiatives/api";
 import { InitiativeForm } from "./initiatives/InitiativeForm";
 import { InitiativesList } from "./initiatives/InitiativesList";
-import { LoginRequired } from "./initiatives/LoginRequired";
 import type { Initiative, ListStatus } from "./initiatives/types";
 
 const InitiativesMap = dynamic(
-  () => import("./initiatives/InitiativesMap").then((mod) => mod.InitiativesMap),
+  () =>
+    import("./initiatives/map/InitiativesMap").then((mod) => mod.InitiativesMap),
   { ssr: false },
 );
 
 export default function Initiatives() {
-  const token = useSyncExternalStore(
-    subscribeToAuthToken,
-    getStoredAuthToken,
-    getServerAuthToken,
-  );
+  const token = useAuthToken();
   const [initiatives, setInitiatives] = useState<Initiative[]>([]);
   const [listStatus, setListStatus] = useState<ListStatus>("idle");
   const [listMessage, setListMessage] = useState("");

@@ -11,7 +11,7 @@ export function InitiativeLinks({
     return null;
   }
 
-  const href = `/iniciativas/${id}`;
+  const href = `/initiatives/${id}`;
 
   return (
     <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1">

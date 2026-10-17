@@ -1,18 +1,7 @@
 "use client";
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
-
-const TOKEN_STORAGE_KEY = "odsquiz-auth-token";
-
-// The native "storage" event only reaches other tabs, so writes broadcast this.
-const AUTH_CHANGE_EVENT = "odsquiz-auth-change";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { clearAuthToken, getAuthToken, subscribeToAuthToken } from "@/lib/auth";
 
 export type SessionUser = {
   id: string;
@@ -36,18 +25,8 @@ const SessionContext = createContext<SessionState & { signOut: () => void }>({
   signOut: () => {},
 });
 
-export function storeAuthToken(token: string) {
-  window.localStorage.setItem(TOKEN_STORAGE_KEY, token);
-  window.dispatchEvent(new Event(AUTH_CHANGE_EVENT));
-}
-
-export function clearAuthToken() {
-  window.localStorage.removeItem(TOKEN_STORAGE_KEY);
-  window.dispatchEvent(new Event(AUTH_CHANGE_EVENT));
-}
-
 async function fetchSession(signal: AbortSignal): Promise<SessionState> {
-  const token = window.localStorage.getItem(TOKEN_STORAGE_KEY);
+  const token = getAuthToken();
 
   if (!token) {
     return SIGNED_OUT;
@@ -60,7 +39,7 @@ async function fetchSession(signal: AbortSignal): Promise<SessionState> {
 
   if (!response.ok) {
     if (response.status === 401) {
-      window.localStorage.removeItem(TOKEN_STORAGE_KEY);
+      clearAuthToken();
     }
 
     return SIGNED_OUT;
@@ -91,18 +70,15 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         });
 
     void sync();
-    window.addEventListener(AUTH_CHANGE_EVENT, sync);
-    window.addEventListener("storage", sync);
+    const unsubscribe = subscribeToAuthToken(sync);
 
     return () => {
       controller.abort();
-      window.removeEventListener(AUTH_CHANGE_EVENT, sync);
-      window.removeEventListener("storage", sync);
+      unsubscribe();
     };
   }, []);
 
-  const signOut = useCallback(() => clearAuthToken(), []);
-  const value = useMemo(() => ({ ...state, signOut }), [state, signOut]);
+  const value = useMemo(() => ({ ...state, signOut: clearAuthToken }), [state]);
 
   return (
     <SessionContext.Provider value={value}>{children}</SessionContext.Provider>

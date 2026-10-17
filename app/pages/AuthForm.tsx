@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { SyntheticEvent } from "react";
 import { useState } from "react";
-import { storeAuthToken } from "@/components/SessionProvider";
+import { storeAuthToken } from "@/lib/auth";
 
 type AuthMode = "login" | "signup";
 
