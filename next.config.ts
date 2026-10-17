@@ -6,6 +6,15 @@ const initiativesApiUrl =
 const quizApiUrl = process.env.QUIZ_API_URL ?? "http://localhost:8082";
 
 const nextConfig: NextConfig = {
+  async redirects() {
+    return [
+      {
+        source: "/iniciativas/:path*",
+        destination: "/initiatives/:path*",
+        permanent: true,
+      },
+    ];
+  },
   async rewrites() {
     return [
       {

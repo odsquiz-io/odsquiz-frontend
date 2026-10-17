@@ -1,24 +1,15 @@
 "use client";
 
-import Link from "next/link";
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Header } from "@/components/Header";
-import { odsNames } from "./ods";
-import {
-  fetchQuizQuestions,
-  getServerAuthToken,
-  getStoredAuthToken,
-  submitQuiz,
-  subscribeToAuthToken,
-} from "./quiz/api";
+import { LoginRequired } from "@/components/LoginRequired";
+import { useAuthToken } from "@/lib/auth";
+import { odsNames } from "@/lib/ods";
+import { fetchQuizQuestions, submitQuiz } from "./quiz/api";
 import type { QuizQuestion, QuizResult, QuizStatus } from "./quiz/types";
 
 export default function Quiz() {
-  const token = useSyncExternalStore(
-    subscribeToAuthToken,
-    getStoredAuthToken,
-    getServerAuthToken,
-  );
+  const token = useAuthToken();
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [selections, setSelections] = useState<Record<string, string>>({});
   const [result, setResult] = useState<QuizResult | null>(null);
@@ -110,7 +101,12 @@ export default function Quiz() {
           </div>
         </div>
 
-        {!token ? <LoginRequired /> : null}
+        {!token ? (
+          <LoginRequired
+            className="mb-5"
+            message="Entre na sua conta para salvar sua pontuação."
+          />
+        ) : null}
 
         {status === "loading" ? (
           <p className="rounded-lg border border-[var(--color-header-border)] bg-[var(--color-header-background)] p-5 text-sm text-[var(--color-app-foreground)]">
@@ -252,21 +248,6 @@ function ResultPanel({
           </div>
         ))}
       </div>
-    </div>
-  );
-}
-
-function LoginRequired() {
-  return (
-    <div className="mb-5 rounded-lg border border-[var(--color-header-border)] bg-[var(--color-header-background)] p-5 text-[var(--color-app-foreground)] shadow-xl shadow-black/10">
-      <h2 className="text-xl font-bold">Login necessário</h2>
-      <p className="mt-2 text-sm">Entre na sua conta para salvar sua pontuação.</p>
-      <Link
-        href="/login"
-        className="mt-5 inline-flex min-h-11 items-center rounded-md border border-[var(--color-app-foreground)] px-4 text-sm font-bold text-[var(--color-app-foreground)] transition hover:bg-[var(--color-app-foreground)] hover:text-[var(--color-button-hover-text)]"
-      >
-        Fazer login
-      </Link>
     </div>
   );
 }

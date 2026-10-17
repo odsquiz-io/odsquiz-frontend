@@ -1,7 +1,7 @@
 import dynamic from "next/dynamic";
 import type { ReactNode, SyntheticEvent } from "react";
 import { useState } from "react";
-import { odsNames } from "../ods";
+import { odsNames } from "@/lib/ods";
 import { createInitiative, geocodeAddress, lookupAddressByCep } from "./api";
 import type {
   CepLookupStatus,
@@ -14,7 +14,7 @@ import type {
 import { initialFormState, validateInitiativeForm } from "./validation";
 
 const LocationMap = dynamic(
-  () => import("./InitiativesMap").then((mod) => mod.LocationMap),
+  () => import("./map/LocationMap").then((mod) => mod.LocationMap),
   { ssr: false },
 );
 

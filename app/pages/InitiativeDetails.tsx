@@ -2,29 +2,21 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useState } from "react";
 import { Header } from "@/components/Header";
-import {
-  fetchInitiative,
-  getServerAuthToken,
-  getStoredAuthToken,
-  subscribeToAuthToken,
-} from "./initiatives/api";
+import { LoginRequired } from "@/components/LoginRequired";
+import { useAuthToken } from "@/lib/auth";
+import { fetchInitiative } from "./initiatives/api";
 import { Feedback, InitiativeCard } from "./initiatives/InitiativesList";
-import { LoginRequired } from "./initiatives/LoginRequired";
 import type { Initiative } from "./initiatives/types";
 
 const LocationMap = dynamic(
-  () => import("./initiatives/InitiativesMap").then((mod) => mod.LocationMap),
+  () => import("./initiatives/map/LocationMap").then((mod) => mod.LocationMap),
   { ssr: false },
 );
 
 export default function InitiativeDetails({ id }: { id: string }) {
-  const token = useSyncExternalStore(
-    subscribeToAuthToken,
-    getStoredAuthToken,
-    getServerAuthToken,
-  );
+  const token = useAuthToken();
   const [initiative, setInitiative] = useState<Initiative | null>(null);
   const [error, setError] = useState("");
 
@@ -71,7 +63,7 @@ export default function InitiativeDetails({ id }: { id: string }) {
             </h1>
           </div>
           <Link
-            href="/iniciativas"
+            href="/initiatives"
             className="inline-flex h-10 items-center rounded-md border border-[var(--color-app-foreground)] px-4 text-sm font-bold text-[var(--color-app-foreground)] transition hover:bg-[var(--color-app-foreground)] hover:text-[var(--color-button-hover-text)]"
           >
             Voltar

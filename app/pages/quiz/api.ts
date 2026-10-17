@@ -1,18 +1,5 @@
 import type { QuizQuestion, QuizResult } from "./types";
 
-export function getStoredAuthToken() {
-  return window.localStorage.getItem("odsquiz-auth-token");
-}
-
-export function getServerAuthToken() {
-  return null;
-}
-
-export function subscribeToAuthToken(onStoreChange: () => void) {
-  window.addEventListener("storage", onStoreChange);
-  return () => window.removeEventListener("storage", onStoreChange);
-}
-
 export async function fetchQuizQuestions() {
   const payload = await request(
     "/api/quiz/questions",

@@ -23,19 +23,6 @@ type AwesomeApiCepResponse = {
 
 type NominatimSearchResult = { lat?: string; lon?: string };
 
-export function getStoredAuthToken() {
-  return window.localStorage.getItem("odsquiz-auth-token");
-}
-
-export function getServerAuthToken() {
-  return null;
-}
-
-export function subscribeToAuthToken(onStoreChange: () => void) {
-  window.addEventListener("storage", onStoreChange);
-  return () => window.removeEventListener("storage", onStoreChange);
-}
-
 export async function fetchInitiatives(token: string) {
   const payload = await request(
     "/api/initiatives",

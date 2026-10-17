@@ -1,8 +1,16 @@
 import Link from "next/link";
 
-export function LoginRequired({ message }: { message: string }) {
+export function LoginRequired({
+  className = "",
+  message,
+}: {
+  className?: string;
+  message: string;
+}) {
   return (
-    <div className="rounded-lg border border-[var(--color-header-border)] bg-[var(--color-header-background)] p-5 text-[var(--color-app-foreground)] shadow-2xl shadow-black/20">
+    <div
+      className={`rounded-lg border border-[var(--color-header-border)] bg-[var(--color-header-background)] p-5 text-[var(--color-app-foreground)] shadow-2xl shadow-black/20 ${className}`}
+    >
       <h2 className="text-xl font-bold">Login necessário</h2>
       <p className="mt-2 text-sm">{message}</p>
       <Link
