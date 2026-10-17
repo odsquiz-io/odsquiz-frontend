@@ -1,6 +1,7 @@
 import dynamic from "next/dynamic";
 import type { ReactNode, SyntheticEvent } from "react";
 import { useState } from "react";
+import { odsNames } from "../ods";
 import { createInitiative, geocodeAddress, lookupAddressByCep } from "./api";
 import type {
   CepLookupStatus,
@@ -21,19 +22,27 @@ type FieldConfig = {
   autoComplete?: string;
   className?: string;
   field: InitiativeFormField;
+  hint: ReactNode;
   inputMode?: "numeric";
-  kind?: "input" | "textarea" | "cep";
+  kind?: "input" | "textarea" | "cep" | "select";
   label: string;
   max?: number;
   min?: number;
+  options?: string[];
   type?: "email" | "number" | "text";
 };
 
 const fields: FieldConfig[] = [
-  { autoComplete: "organization", field: "name", label: "Nome" },
+  {
+    autoComplete: "organization",
+    field: "name",
+    hint: "Nome pelo qual a iniciativa é conhecida.",
+    label: "Nome",
+  },
   {
     autoComplete: "email",
     field: "emailOwner",
+    hint: "Contato de quem responde pela iniciativa. Fica visível na página dela.",
     label: "Email do responsável",
     type: "email",
   },
@@ -41,20 +50,33 @@ const fields: FieldConfig[] = [
     autoComplete: "street-address",
     className: "md:col-span-2",
     field: "address",
+    hint: "Preenchido ao buscar o CEP. Acrescente o número e o complemento.",
     kind: "textarea",
     label: "Endereço",
   },
   {
     autoComplete: "postal-code",
     field: "cep",
+    hint: "Digite os 8 números e clique em Buscar para preencher o endereço e o mapa.",
     inputMode: "numeric",
     kind: "cep",
     label: "CEP",
   },
-  { field: "actingArea", label: "Área de atuação" },
-  { field: "type", label: "Tipo" },
+  {
+    field: "actingArea",
+    hint: "Nome do bairro, cidade ou região. Ex.: Centro, Nova Friburgo - RJ.",
+    label: "Área de atuação",
+  },
+  {
+    field: "type",
+    hint: "Quem organiza a iniciativa.",
+    kind: "select",
+    label: "Tipo",
+    options: ["Sociedade Civil", "Instituição Pública", "Instituição Privada"],
+  },
   {
     field: "impact",
+    hint: "Quantidade aproximada de pessoas atendidas pela iniciativa.",
     inputMode: "numeric",
     label: "Impacto",
     min: 0,
@@ -62,6 +84,21 @@ const fields: FieldConfig[] = [
   },
   {
     field: "mainODS",
+    hint: (
+      <>
+        Número de 1 a 17 do Objetivo de Desenvolvimento Sustentável da ONU em
+        que a iniciativa mais atua. Consulte a{" "}
+        <a
+          href="https://brasil.un.org/pt-br/sdgs"
+          target="_blank"
+          rel="noreferrer"
+          className="underline"
+        >
+          lista oficial
+        </a>
+        .
+      </>
+    ),
     inputMode: "numeric",
     label: "ODS principal",
     max: 17,
@@ -202,6 +239,7 @@ export function InitiativeForm({
             key={field.field}
             className={field.className}
             error={fieldErrors[field.field]}
+            hint={field.hint}
             label={field.label}
             name={field.field}
           >
@@ -254,10 +292,28 @@ export function InitiativeForm({
       required: true,
       value: form[field.field],
       "aria-invalid": error,
+      "aria-describedby": error
+        ? `${field.field}-hint ${field.field}-error`
+        : `${field.field}-hint`,
       onChange: (
-        event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+        event: React.ChangeEvent<
+          HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+        >,
       ) => updateField(field.field, event.target.value),
     };
+
+    if (field.kind === "select") {
+      return (
+        <select {...sharedProps} className={fieldClass(error)}>
+          <option value="" disabled>
+            Selecione
+          </option>
+          {field.options?.map((option) => (
+            <option key={option}>{option}</option>
+          ))}
+        </select>
+      );
+    }
 
     if (field.kind === "textarea") {
       return (
@@ -281,6 +337,21 @@ export function InitiativeForm({
         className={fieldClass(error)}
       />
     );
+
+    if (field.field === "mainODS") {
+      const odsName = odsNames[Number(form.mainODS)];
+
+      return (
+        <>
+          {input}
+          {odsName ? (
+            <span className="mt-2 block text-sm font-semibold text-[var(--color-link-hover)]">
+              {odsName}
+            </span>
+          ) : null}
+        </>
+      );
+    }
 
     if (field.kind !== "cep") {
       return input;
@@ -306,20 +377,28 @@ function Field({
   children,
   className = "",
   error,
+  hint,
   label,
   name,
 }: {
   children: ReactNode;
   className?: string;
   error?: string;
+  hint: ReactNode;
   label: string;
   name: InitiativeFormField;
 }) {
   return (
     <label className={`block ${className}`}>
-      <span className="mb-2 block text-sm font-semibold text-[var(--color-app-foreground)]">
+      <span className="mb-1 block text-sm font-semibold text-[var(--color-app-foreground)]">
         {label}
         <span aria-hidden="true"> *</span>
+      </span>
+      <span
+        id={`${name}-hint`}
+        className="mb-2 block text-xs text-[var(--color-app-foreground)] opacity-80"
+      >
+        {hint}
       </span>
       {children}
       {error ? (
