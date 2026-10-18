@@ -1,4 +1,4 @@
-import { eyebrow, stagger } from "./styles";
+import { eyebrow, stagger } from "@/components/styles";
 
 const principles = [
   {

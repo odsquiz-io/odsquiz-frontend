@@ -29,6 +29,7 @@ export function subscribeToAuthToken(onChange: () => void) {
   };
 }
 
+// Undefined until hydration, so pages can tell "unknown" apart from "signed out".
 export function useAuthToken() {
-  return useSyncExternalStore(subscribeToAuthToken, getAuthToken, () => null);
+  return useSyncExternalStore(subscribeToAuthToken, getAuthToken, () => undefined);
 }

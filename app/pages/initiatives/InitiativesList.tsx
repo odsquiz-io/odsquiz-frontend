@@ -1,4 +1,9 @@
 import type { ReactNode } from "react";
+import { OdsBand } from "@/components/OdsBand";
+import { SectionHeader } from "@/components/SectionHeader";
+import { focusRing, secondaryButton, surface } from "@/components/styles";
+import { findGoal } from "@/lib/ods";
+import { formatNumber, initiativeFacts } from "./format";
 import { InitiativeLinks } from "./InitiativeLinks";
 import type { Initiative, ListStatus } from "./types";
 
@@ -9,47 +14,58 @@ type InitiativesListProps = {
   status: ListStatus;
 };
 
+const cardLink = `font-bold underline-offset-4 transition hover:text-[var(--color-link-hover)] hover:underline ${focusRing}`;
+
 export function InitiativesList({
   initiatives,
   message,
   onRefresh,
   status,
 }: InitiativesListProps) {
+  const total = initiatives.length;
+
   return (
-    <section className="mt-8">
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="text-2xl font-extrabold text-[var(--color-app-foreground)]">
-          Todas as iniciativas
-        </h2>
+    <section aria-labelledby="initiatives-title" className="pt-24">
+      <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+        <SectionHeader
+          animated={false}
+          id="initiatives-title"
+          label="Quem já está no mapa"
+          title={total > 0 ? `${countLabel(total)}.` : "Iniciativas cadastradas."}
+        >
+          {total > 0
+            ? "Cada cartão traz, na cor oficial, o objetivo em que a iniciativa mais atua."
+            : null}
+        </SectionHeader>
         <button
           type="button"
           disabled={status === "loading"}
           onClick={onRefresh}
-          className="h-10 rounded-md border border-[var(--color-app-foreground)] px-4 text-sm font-bold text-[var(--color-app-foreground)] transition hover:bg-[var(--color-app-foreground)] hover:text-[var(--color-button-hover-text)] disabled:cursor-not-allowed disabled:opacity-60"
+          className={`shrink-0 self-start sm:self-auto ${secondaryButton} disabled:cursor-not-allowed disabled:opacity-60`}
         >
           {status === "loading" ? "Atualizando..." : "Atualizar"}
         </button>
       </div>
 
-      <ListFeedback status={status} total={initiatives.length} message={message} />
+      <ListFeedback status={status} total={total} message={message} />
 
-      {initiatives.length > 0 ? (
-        <div className="grid gap-4 md:grid-cols-2">
+      {total > 0 ? (
+        <ul className="mt-12 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {initiatives.map((initiative, index) => (
-            <InitiativeCard
-              key={initiative.id ?? `${initiative.name}-${index}`}
-              initiative={initiative}
-            >
-              <InitiativeLinks
-                id={initiative.id}
-                className="text-sm font-semibold text-[var(--color-link-hover)] hover:underline"
-              />
-            </InitiativeCard>
+            <li key={initiative.id ?? `${initiative.name}-${index}`}>
+              <InitiativeCard initiative={initiative} />
+            </li>
           ))}
-        </div>
+        </ul>
       ) : null}
     </section>
   );
+}
+
+function countLabel(total: number) {
+  return total === 1
+    ? "1 iniciativa cadastrada"
+    : `${formatNumber(total)} iniciativas cadastradas`;
 }
 
 function ListFeedback({
@@ -62,98 +78,100 @@ function ListFeedback({
   total: number;
 }) {
   if (status === "error") {
-    return <Feedback tone="error">{message}</Feedback>;
+    return (
+      <Feedback className="mt-12" tone="error">
+        {message}
+      </Feedback>
+    );
   }
 
   if (status === "loading" && total === 0) {
-    return <Feedback>Carregando iniciativas...</Feedback>;
+    return (
+      <Feedback className="mt-12" tone="loading">
+        Carregando iniciativas...
+      </Feedback>
+    );
   }
 
   if (status !== "loading" && total === 0) {
-    return <Feedback>Nenhuma iniciativa cadastrada ainda.</Feedback>;
+    return <Feedback className="mt-12">Nenhuma iniciativa cadastrada ainda.</Feedback>;
   }
 
   return null;
 }
 
-export function InitiativeCard({
-  children,
-  initiative,
-}: {
-  children?: ReactNode;
-  initiative: Initiative;
-}) {
-  const items: Array<[string, string | undefined]> = [
-    ["Área", initiative.acting_area],
-    ["Endereço", initiative.address],
-    ["CEP", initiative.cep],
-    ["Responsável", initiative.email_owner],
-    ["Impacto", formatNumber(initiative.impact)],
-    ["Pontos", formatNumber(initiative.points)],
-  ];
+function InitiativeCard({ initiative }: { initiative: Initiative }) {
+  const goal = findGoal(initiative.main_ods);
 
   return (
-    <article className="rounded-lg border border-[var(--color-header-border)] bg-[var(--color-header-background)] p-5 text-[var(--color-app-foreground)] shadow-2xl shadow-black/10">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h3 className="text-lg font-bold">
-            {initiative.name || "Iniciativa sem nome"}
-          </h3>
-          <p className="mt-1 text-sm text-[var(--color-link-hover)]">
-            {initiative.type || "Tipo não informado"}
-          </p>
-        </div>
-        {typeof initiative.main_ods === "number" ? (
-          <span className="inline-flex h-9 items-center rounded-md border border-[var(--color-header-border)] px-3 text-sm font-bold">
-            ODS {initiative.main_ods}
+    <article className={`flex h-full flex-col overflow-hidden ${surface}`}>
+      <h3 className="wrap-break-word px-5 pt-5 text-2xl font-extrabold leading-tight [font-stretch:85%]">
+        {initiative.name || "Iniciativa sem nome"}
+      </h3>
+      {goal ? (
+        <p
+          className="order-first flex items-center gap-3 px-5 py-4"
+          style={{ backgroundColor: goal.color, color: goal.textColor }}
+        >
+          <span
+            aria-hidden="true"
+            className="font-display text-4xl font-extrabold leading-none [font-stretch:75%]"
+          >
+            {String(goal.number).padStart(2, "0")}
           </span>
-        ) : null}
-      </div>
+          <span className="text-sm font-bold leading-snug">
+            <span className="sr-only">ODS {goal.number}: </span>
+            {goal.name}
+          </span>
+        </p>
+      ) : (
+        <OdsBand className="order-first h-1.5" />
+      )}
 
-      <dl className="mt-4 grid gap-3 text-sm">
-        {items.map(([label, value]) => (
-          <InfoItem key={label} label={label} value={value} />
+      <dl className="mt-5 grid grid-cols-2 gap-4 px-5 text-sm">
+        {initiativeFacts(initiative).map((fact) => (
+          <div key={fact.label} className={fact.wide ? "col-span-2" : undefined}>
+            <dt className="text-[var(--color-muted)]">{fact.label}</dt>
+            <dd className="mt-0.5 font-medium wrap-anywhere">{fact.value}</dd>
+          </div>
         ))}
       </dl>
 
-      {children}
+      <div className="mt-auto px-5 pb-5 pt-3">
+        <InitiativeLinks id={initiative.id} className={cardLink} />
+      </div>
     </article>
-  );
-}
-
-function InfoItem({ label, value }: { label: string; value?: string }) {
-  if (!value) {
-    return null;
-  }
-
-  return (
-    <div>
-      <dt className="font-bold">{label}</dt>
-      <dd className="mt-1 break-words">{value}</dd>
-    </div>
   );
 }
 
 export function Feedback({
   children,
+  className = "",
   tone = "default",
 }: {
-  children: React.ReactNode;
-  tone?: "default" | "error";
+  children: ReactNode;
+  className?: string;
+  tone?: "default" | "error" | "loading";
 }) {
-  return (
-    <p
-      className={`rounded-lg border bg-[var(--color-header-background)] p-4 text-sm font-medium ${
-        tone === "error"
-          ? "border-red-400 text-red-400"
-          : "border-[var(--color-header-border)] text-[var(--color-app-foreground)]"
-      }`}
-    >
-      {children}
-    </p>
-  );
-}
+  const isError = tone === "error";
 
-function formatNumber(value?: number) {
-  return typeof value === "number" ? String(value) : undefined;
+  return (
+    <div
+      role={isError ? "alert" : "status"}
+      className={`overflow-hidden rounded-lg border bg-[var(--color-header-background)] ${
+        isError ? "border-[var(--color-error)]" : "border-[var(--color-header-border)]"
+      } ${className}`}
+    >
+      {tone === "loading" ? (
+        <OdsBand className="h-1 origin-left motion-safe:animate-[draw_1.2s_ease-in-out_infinite_alternate]" />
+      ) : null}
+      <p
+        className={`p-5 font-medium ${
+          isError ? "text-[var(--color-error)]" : "text-[var(--color-muted)]"
+        }`}
+      >
+        {children}
+      </p>
+    </div>
+  );
 }

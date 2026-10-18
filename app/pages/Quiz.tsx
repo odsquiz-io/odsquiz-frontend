@@ -1,12 +1,24 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { Header } from "@/components/Header";
+import { useEffect, useState } from "react";
 import { LoginRequired } from "@/components/LoginRequired";
+import { OdsBand } from "@/components/OdsBand";
+import { PageHeader } from "@/components/PageHeader";
 import { useAuthToken } from "@/lib/auth";
-import { odsNames } from "@/lib/ods";
+import { odsGoals } from "@/lib/ods";
 import { fetchQuizQuestions, submitQuiz } from "./quiz/api";
+import { QuestionCard } from "./quiz/QuestionCard";
+import { ResultPanel } from "./quiz/ResultPanel";
+import { SubmitBar } from "./quiz/SubmitBar";
 import type { QuizQuestion, QuizResult, QuizStatus } from "./quiz/types";
+
+function errorMessage(error: unknown, fallback: string) {
+  if (error instanceof TypeError) {
+    return "Não foi possível conectar ao quiz. Confira sua conexão e tente de novo.";
+  }
+
+  return error instanceof Error ? error.message : fallback;
+}
 
 export default function Quiz() {
   const token = useAuthToken();
@@ -32,9 +44,7 @@ export default function Quiz() {
       } catch (error) {
         if (isCurrent) {
           setStatus("error");
-          setMessage(
-            error instanceof Error ? error.message : "Algo deu errado ao carregar o quiz.",
-          );
+          setMessage(errorMessage(error, "Algo deu errado ao carregar o quiz."));
         }
       }
     }
@@ -48,12 +58,6 @@ export default function Quiz() {
 
   const answeredCount = Object.keys(selections).length;
   const canSubmit = Boolean(token) && answeredCount === questions.length && questions.length > 0;
-
-  const orderedScores = useMemo(() => {
-    return [...(result?.ods_scores ?? [])]
-      .filter((score) => score.points > 0)
-      .sort((a, b) => b.points - a.points);
-  }, [result]);
 
   async function handleSubmit() {
     if (!token) {
@@ -75,179 +79,111 @@ export default function Quiz() {
       setStatus("success");
     } catch (error) {
       setStatus("error");
-      setMessage(
-        error instanceof Error ? error.message : "Algo deu errado ao enviar o quiz.",
-      );
+      setMessage(errorMessage(error, "Algo deu errado ao enviar o quiz."));
     }
   }
 
   return (
-    <main className="relative min-h-screen bg-[var(--color-app-background)] transition-colors">
-      <Header />
-
-      <section className="mx-auto flex w-full max-w-6xl flex-col px-4 pb-12 pt-28 sm:px-6 sm:pt-32">
-        <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.12em] text-[var(--color-link-hover)]">
-              ODS Quiz
-            </p>
-            <h1 className="mt-2 text-3xl font-extrabold text-[var(--color-app-foreground)]">
-              Quiz individual
-            </h1>
-          </div>
-
-          <div className="rounded-lg border border-[var(--color-header-border)] bg-[var(--color-header-background)] px-4 py-3 text-sm text-[var(--color-app-foreground)] shadow-xl shadow-black/10">
-            {answeredCount}/{questions.length} respondidas
-          </div>
-        </div>
-
-        {!token ? (
-          <LoginRequired
-            className="mb-5"
-            message="Entre na sua conta para salvar sua pontuação."
-          />
-        ) : null}
+    <main className="min-h-svh flex-1 bg-[var(--color-app-background)] pb-24 text-[var(--color-app-foreground)] transition-colors">
+      <div className="mx-auto max-w-6xl px-4 pt-36 sm:px-6 sm:pt-44">
+        <PageHeader
+          label="Quiz individual"
+          title="Qual ODS tem mais a ver com a sua realidade?"
+          actions={questions.length > 0 ? <QuizFacts questions={questions} /> : undefined}
+        >
+          Perguntas sobre o dia a dia da sua casa e da sua comunidade, cada uma
+          ligada a um dos Objetivos de Desenvolvimento Sustentável. Não há
+          resposta certa ou errada: no fim, você vê como a sua realidade se
+          relaciona com cada ODS.
+        </PageHeader>
 
         {status === "loading" ? (
-          <p className="rounded-lg border border-[var(--color-header-border)] bg-[var(--color-header-background)] p-5 text-sm text-[var(--color-app-foreground)]">
-            Carregando perguntas...
-          </p>
-        ) : null}
-
-        {message ? (
-          <p className="mb-5 rounded-lg border border-red-400/40 bg-red-500/10 p-4 text-sm font-semibold text-red-300">
-            {message}
-          </p>
-        ) : null}
-
-        {result ? (
-          <ResultPanel result={result} orderedScores={orderedScores} />
-        ) : (
-          <div className="space-y-4">
-            {questions.map((question) => (
-              <QuestionCard
-                key={question.id}
-                question={question}
-                selectedOptionID={selections[question.id]}
-                onSelect={(answerOptionId) =>
-                  setSelections((currentSelections) => ({
-                    ...currentSelections,
-                    [question.id]: answerOptionId,
-                  }))
-                }
-              />
-            ))}
-
-            {questions.length > 0 ? (
-              <div className="sticky bottom-0 z-10 -mx-4 border-t border-[var(--color-header-border)] bg-[var(--color-app-background)]/95 px-4 py-4 backdrop-blur sm:-mx-6 sm:px-6">
-                <div className="mx-auto flex max-w-6xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <p className="text-sm font-medium text-[var(--color-app-foreground)]">
-                    {canSubmit
-                      ? "Tudo respondido."
-                      : "Complete todas as perguntas para registrar sua pontuação."}
-                  </p>
-                  <button
-                    type="button"
-                    disabled={!canSubmit || status === "submitting"}
-                    onClick={handleSubmit}
-                    className="min-h-11 rounded-md border border-[var(--color-app-foreground)] px-5 text-sm font-bold text-[var(--color-app-foreground)] transition enabled:hover:bg-[var(--color-app-foreground)] enabled:hover:text-[var(--color-button-hover-text)] disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {status === "submitting" ? "Enviando..." : "Enviar respostas"}
-                  </button>
-                </div>
-              </div>
-            ) : null}
+          <div role="status" className="mt-12 flex items-center gap-4 text-[var(--color-muted)]">
+            <OdsBand className="h-1.5 w-20 origin-left motion-safe:animate-[draw_1.2s_ease-in-out_infinite_alternate]" />
+            Carregando perguntas…
           </div>
-        )}
-      </section>
+        ) : null}
+
+        {status === "idle" && questions.length === 0 ? (
+          <p className="mt-12 text-[var(--color-muted)]">
+            Nenhuma pergunta disponível no momento. Volte mais tarde.
+          </p>
+        ) : null}
+
+        {questions.length === 0 && message ? (
+          <div role="alert" className="mt-12 max-w-3xl rounded-lg border-2 border-[var(--color-error)] p-6">
+            <p className="font-bold text-[var(--color-error)]">{message}</p>
+            <p className="mt-2 text-[var(--color-muted)]">
+              Atualize a página para tentar de novo.
+            </p>
+          </div>
+        ) : null}
+
+        {token === null ? (
+          <LoginRequired
+            className="mt-12 max-w-4xl"
+            message="Você pode marcar as respostas sem conta, mas só consegue enviá-las e ver o resultado depois de entrar. Faça login antes de começar para não perder o que marcou."
+          />
+        ) : null}
+      </div>
+
+      {result ? (
+        <ResultPanel result={result} />
+      ) : questions.length > 0 ? (
+        <div className="mt-12">
+          <div className="mx-auto max-w-6xl px-4 sm:px-6">
+            <ol aria-label="Perguntas do quiz" className="grid max-w-4xl gap-4">
+              {questions.map((question) => (
+                <QuestionCard
+                  key={question.id}
+                  question={question}
+                  selectedOptionID={selections[question.id]}
+                  total={questions.length}
+                  onSelect={(answerOptionId) =>
+                    setSelections((currentSelections) => ({
+                      ...currentSelections,
+                      [question.id]: answerOptionId,
+                    }))
+                  }
+                />
+              ))}
+            </ol>
+          </div>
+
+          <SubmitBar
+            answeredCount={answeredCount}
+            canSubmit={canSubmit}
+            hasToken={Boolean(token)}
+            message={message}
+            questions={questions}
+            selections={selections}
+            submitting={status === "submitting"}
+            onSubmit={handleSubmit}
+          />
+        </div>
+      ) : null}
     </main>
   );
 }
 
-function QuestionCard({
-  onSelect,
-  question,
-  selectedOptionID,
-}: {
-  onSelect: (answerOptionId: string) => void;
-  question: QuizQuestion;
-  selectedOptionID?: string;
-}) {
-  return (
-    <fieldset className="rounded-lg border border-[var(--color-header-border)] bg-[var(--color-header-background)] p-4 text-[var(--color-app-foreground)] shadow-xl shadow-black/10 sm:p-5">
-      <legend className="sr-only">Pergunta {question.number}</legend>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <p className="text-base font-bold leading-7">
-          {question.number}) {question.text}
-        </p>
-        <span className="shrink-0 rounded-md border border-[var(--color-header-border)] px-2 py-1 text-xs font-bold text-[var(--color-link-hover)]">
-          ODS {question.ods_number}
-        </span>
-      </div>
+function QuizFacts({ questions }: { questions: QuizQuestion[] }) {
+  const goalsCovered = new Set(questions.map((question) => question.ods_number)).size;
 
-      <div className="mt-4 grid gap-2">
-        {question.options.map((option) => (
-          <label
-            key={option.id}
-            className={`flex cursor-pointer items-start gap-3 rounded-md border p-3 text-sm transition ${
-              selectedOptionID === option.id
-                ? "border-[var(--color-link-hover)] bg-[var(--color-link-hover)]/15"
-                : "border-[var(--color-header-border)] hover:border-[var(--color-link-hover)]"
-            }`}
-          >
-            <input
-              type="radio"
-              name={question.id}
-              checked={selectedOptionID === option.id}
-              onChange={() => onSelect(option.id)}
-              className="mt-1 h-4 w-4 accent-[var(--color-link-hover)]"
-            />
-            <span>{option.label}</span>
-          </label>
-        ))}
-      </div>
-    </fieldset>
+  return (
+    <div className="flex origin-bottom-left gap-10 motion-safe:animate-[zoom_700ms_cubic-bezier(0.2,0.8,0.2,1)_both]">
+      <Fact value={questions.length} label="perguntas" />
+      <Fact value={goalsCovered} label={`de ${odsGoals.length} ODS`} />
+    </div>
   );
 }
 
-function ResultPanel({
-  orderedScores,
-  result,
-}: {
-  orderedScores: QuizResult["ods_scores"];
-  result: QuizResult;
-}) {
-  const bestScore = orderedScores[0];
-
+function Fact({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-lg border border-[var(--color-header-border)] bg-[var(--color-header-background)] p-5 text-[var(--color-app-foreground)] shadow-2xl shadow-black/20 sm:p-6">
-      <p className="text-sm font-semibold uppercase tracking-[0.12em] text-[var(--color-link-hover)]">
-        Resultado registrado
-      </p>
-      <h2 className="mt-2 text-3xl font-extrabold">{result.total_points} pontos</h2>
-      {bestScore ? (
-        <p className="mt-2 text-sm">
-          Maior afinidade: ODS {bestScore.ods_number}
-          {odsNames[bestScore.ods_number] ? ` - ${odsNames[bestScore.ods_number]}` : ""}.
-        </p>
-      ) : null}
-
-      <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {orderedScores.map((score) => (
-          <div
-            key={score.ods_number}
-            className="rounded-md border border-[var(--color-header-border)] p-3"
-          >
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-sm font-bold">ODS {score.ods_number}</p>
-              <p className="text-sm font-bold text-[var(--color-link-hover)]">
-                {score.points} pts
-              </p>
-            </div>
-            <p className="mt-1 text-xs opacity-80">{odsNames[score.ods_number]}</p>
-          </div>
-        ))}
-      </div>
-    </div>
+    <p>
+      <span className="block font-display text-6xl font-extrabold leading-none tabular-nums [font-stretch:75%]">
+        {value}
+      </span>
+      <span className="mt-2 block text-sm font-bold text-[var(--color-muted)]">{label}</span>
+    </p>
   );
 }

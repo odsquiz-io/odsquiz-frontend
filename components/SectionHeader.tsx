@@ -2,18 +2,20 @@ import type { ReactNode } from "react";
 import { eyebrow } from "./styles";
 
 export function SectionHeader({
+  animated = true,
   children,
   id,
   label,
   title,
 }: {
+  animated?: boolean;
   children?: ReactNode;
   id: string;
   label: string;
   title: string;
 }) {
   return (
-    <div className="build max-w-3xl">
+    <div className={animated ? "build max-w-3xl" : "max-w-3xl"}>
       <p className={eyebrow}>{label}</p>
       <h2
         id={id}

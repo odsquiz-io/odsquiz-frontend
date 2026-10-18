@@ -4,6 +4,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { SyntheticEvent } from "react";
 import { useState } from "react";
+import { flushSync } from "react-dom";
+import { OdsBand } from "@/components/OdsBand";
+import { focusRing, primaryButton, surface } from "@/components/styles";
 import { storeAuthToken } from "@/lib/auth";
 
 type AuthMode = "login" | "signup";
@@ -39,8 +42,16 @@ type ApiErrorResult = {
   message: string;
 };
 
-const duplicateEmailMessage = "A user already exists with that email.";
-const invalidCredentialsMessage = "Invalid email or password.";
+const duplicateEmailMessage = "Já existe uma conta com este e-mail.";
+const invalidCredentialsMessage = "E-mail ou senha incorretos.";
+const unavailableMessage =
+  "O serviço de contas está indisponível no momento. Tente de novo em instantes.";
+
+function invalidRequestMessage(mode: AuthMode) {
+  return mode === "signup"
+    ? "Confira os dados do cadastro e tente de novo."
+    : "Confira seu e-mail e sua senha e tente de novo.";
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
@@ -68,9 +79,7 @@ function getApiErrorCode(payload: unknown): ApiErrorCode | undefined {
 
 function getFallbackErrorMessage(status: number, mode: AuthMode) {
   if (status === 400 || status === 422) {
-    return mode === "signup"
-      ? "Please check your signup information and try again."
-      : "Please check your email and password and try again.";
+    return invalidRequestMessage(mode);
   }
 
   if (status === 401 || status === 403 || (status === 404 && mode === "login")) {
@@ -82,14 +91,14 @@ function getFallbackErrorMessage(status: number, mode: AuthMode) {
   }
 
   if (status === 429) {
-    return "Too many attempts. Please wait a moment and try again.";
+    return "Muitas tentativas seguidas. Espere um pouco e tente de novo.";
   }
 
   if (status >= 500) {
-    return "The authentication service is unavailable. Please try again soon.";
+    return unavailableMessage;
   }
 
-  return "We could not process your request. Please try again.";
+  return "Não foi possível concluir o seu pedido. Tente de novo.";
 }
 
 function getApiErrorResult(
@@ -103,9 +112,7 @@ function getApiErrorResult(
     return {
       fieldErrors: mode === "signup" ? { email: duplicateEmailMessage } : undefined,
       message:
-        mode === "signup"
-          ? "Please fix the highlighted fields."
-          : duplicateEmailMessage,
+        mode === "signup" ? "Corrija os campos destacados." : duplicateEmailMessage,
     };
   }
 
@@ -114,22 +121,15 @@ function getApiErrorResult(
   }
 
   if (code === "invalid_request") {
-    return {
-      message:
-        mode === "signup"
-          ? "Please check your signup information and try again."
-          : "Please check your email and password and try again.",
-    };
+    return { message: invalidRequestMessage(mode) };
   }
 
   if (code === "user_not_found") {
-    return { message: "The requested user could not be found." };
+    return { message: "Não encontramos essa conta." };
   }
 
   if (code === "internal_error") {
-    return {
-      message: "The authentication service is unavailable. Please try again soon.",
-    };
+    return { message: unavailableMessage };
   }
 
   return { message: getFallbackErrorMessage(response.status, mode) };
@@ -166,23 +166,23 @@ function validateAuthForm({
   const trimmedEmail = email.trim();
 
   if (isSignup && !name.trim()) {
-    errors.name = "Please enter your name.";
+    errors.name = "Informe seu nome.";
   }
 
   if (!trimmedEmail) {
-    errors.email = "Please enter your email.";
+    errors.email = "Informe seu e-mail.";
   } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
-    errors.email = "Please enter a valid email.";
+    errors.email = "Digite um e-mail válido, como nome@exemplo.com.";
   }
 
   if (!password) {
-    errors.password = "Please enter your password.";
+    errors.password = "Informe sua senha.";
   } else if (password.length < 5) {
-    errors.password = "Password must be at least 5 characters.";
+    errors.password = "A senha precisa ter pelo menos 5 caracteres.";
   }
 
   if (isSignup && !address.trim()) {
-    errors.address = "Please enter your address.";
+    errors.address = "Informe seu endereço.";
   }
 
   return errors;
@@ -199,13 +199,10 @@ export function AuthForm({ mode }: AuthFormProps) {
   const [message, setMessage] = useState("");
   const [fieldErrors, setFieldErrors] = useState<AuthFieldErrors>({});
 
-  const title = isSignup ? "Crie sua conta" : "Login";
   const endpoint = isSignup ? "/signup" : "/login";
   const alternateHref = isSignup ? "/login" : "/signup";
-  const alternateText = isSignup
-    ? "Already have an account?"
-    : "Need an account?";
-  const alternateAction = isSignup ? "Login" : "Sign up";
+  const alternateText = isSignup ? "Já tem conta?" : "Ainda não tem conta?";
+  const alternateAction = isSignup ? "Entre" : "Cadastre-se";
 
   function clearFieldError(field: AuthField) {
     setFieldErrors((currentErrors) => {
@@ -232,7 +229,11 @@ export function AuthForm({ mode }: AuthFormProps) {
     });
 
     if (Object.keys(validationErrors).length > 0) {
-      setFieldErrors(validationErrors);
+      // Commits the errors first so the focused field already announces its message.
+      flushSync(() => setFieldErrors(validationErrors));
+      event.currentTarget
+        .querySelector<HTMLInputElement>('[aria-invalid="true"]')
+        ?.focus();
       return;
     }
 
@@ -266,15 +267,15 @@ export function AuthForm({ mode }: AuthFormProps) {
       const token = authPayload.token ?? authPayload.access_token;
 
       if (token) {
-        // Goes through the helper so the session provider picks it up in this
-        // same tab, not only after a reload.
         storeAuthToken(token);
       }
 
       setStatus("success");
       setMessage(
         authPayload.message ??
-          (isSignup ? "Account created successfully." : "Logged in successfully."),
+          (isSignup
+            ? "Conta criada! Agora é só entrar."
+            : "Tudo certo, você entrou na sua conta."),
       );
 
       window.setTimeout(() => {
@@ -284,184 +285,179 @@ export function AuthForm({ mode }: AuthFormProps) {
       setStatus("idle");
       setMessage(
         error instanceof TypeError
-          ? "Could not connect to the authentication service. Please try again."
+          ? "Não foi possível conectar ao serviço de contas. Tente de novo."
           : error instanceof Error
             ? error.message
-            : "Something went wrong. Please try again.",
+            : "Algo deu errado. Tente de novo.",
       );
     }
   }
 
   return (
-    <section className="flex min-h-screen items-start justify-center px-3 pb-10 pt-28 sm:px-6 sm:py-32">
-      <div className="w-full max-w-[28rem] rounded-lg border border-[var(--color-header-border)] bg-[var(--color-header-background)] p-5 shadow-2xl shadow-black/20 sm:p-8">
-        <div className="mb-6 sm:mb-7">
-          <p className="text-sm font-semibold uppercase tracking-[0.12em] text-[var(--color-link-hover)]">
-            ODS Quiz
-          </p>
-          <h1 className="mt-2 text-2xl font-extrabold text-[var(--color-app-foreground)] sm:text-3xl">
-            {title}
-          </h1>
+    <div className={`overflow-hidden ${surface}`}>
+      <OdsBand className="h-1.5" />
+
+      <form className="p-6 sm:p-8" noValidate onSubmit={handleSubmit}>
+        <div className="grid gap-5">
+          {isSignup ? (
+            <Field
+              autoComplete="name"
+              error={fieldErrors.name}
+              field="name"
+              label="Nome"
+              type="text"
+              value={name}
+              onChange={(value) => {
+                setName(value);
+                clearFieldError("name");
+              }}
+            />
+          ) : null}
+
+          <Field
+            autoComplete="email"
+            error={fieldErrors.email}
+            field="email"
+            label="E-mail"
+            type="email"
+            value={email}
+            onChange={(value) => {
+              setEmail(value);
+              clearFieldError("email");
+            }}
+          />
+
+          <Field
+            autoComplete={isSignup ? "new-password" : "current-password"}
+            error={fieldErrors.password}
+            field="password"
+            hint={isSignup ? "Use pelo menos 5 caracteres." : undefined}
+            label="Senha"
+            minLength={5}
+            type="password"
+            value={password}
+            onChange={(value) => {
+              setPassword(value);
+              clearFieldError("password");
+            }}
+          />
+
+          {isSignup ? (
+            <Field
+              autoComplete="street-address"
+              error={fieldErrors.address}
+              field="address"
+              label="Endereço"
+              type="text"
+              value={address}
+              onChange={(value) => {
+                setAddress(value);
+                clearFieldError("address");
+              }}
+            />
+          ) : null}
         </div>
 
-        <form className="space-y-4" noValidate onSubmit={handleSubmit}>
-          {isSignup ? (
-            <label className="block">
-              <span className="mb-2 block text-sm font-semibold text-[var(--color-app-foreground)]">
-                Name
-              </span>
-              <input
-                required
-                type="text"
-                autoComplete="name"
-                value={name}
-                aria-invalid={Boolean(fieldErrors.name)}
-                aria-describedby={fieldErrors.name ? "name-error" : undefined}
-                onChange={(event) => {
-                  setName(event.target.value);
-                  clearFieldError("name");
-                }}
-                className={`h-11 w-full rounded-md border bg-[var(--color-app-background)] px-3 text-[var(--color-app-foreground)] outline-none transition placeholder:text-slate-400 focus:border-[var(--color-link-hover)] focus:ring-2 focus:ring-[var(--color-focus-ring)] ${
-                  fieldErrors.name
-                    ? "border-red-400"
-                    : "border-[var(--color-header-border)]"
-                }`}
-              />
-              {fieldErrors.name ? (
-                <p className="mt-2 text-sm font-medium text-red-400" id="name-error">
-                  {fieldErrors.name}
-                </p>
-              ) : null}
-            </label>
-          ) : null}
-
-          <label className="block">
-            <span className="mb-2 block text-sm font-semibold text-[var(--color-app-foreground)]">
-              Email
-            </span>
-            <input
-              required
-              type="email"
-              autoComplete="email"
-              value={email}
-              aria-invalid={Boolean(fieldErrors.email)}
-              aria-describedby={fieldErrors.email ? "email-error" : undefined}
-              onChange={(event) => {
-                setEmail(event.target.value);
-                clearFieldError("email");
-              }}
-              className={`h-11 w-full rounded-md border bg-[var(--color-app-background)] px-3 text-[var(--color-app-foreground)] outline-none transition placeholder:text-slate-400 focus:border-[var(--color-link-hover)] focus:ring-2 focus:ring-[var(--color-focus-ring)] ${
-                fieldErrors.email
-                  ? "border-red-400"
-                  : "border-[var(--color-header-border)]"
-              }`}
-            />
-            {fieldErrors.email ? (
-              <p className="mt-2 text-sm font-medium text-red-400" id="email-error">
-                {fieldErrors.email}
-              </p>
-            ) : null}
-          </label>
-
-          <label className="block">
-            <span className="mb-2 block text-sm font-semibold text-[var(--color-app-foreground)]">
-              Password
-            </span>
-            <input
-              required
-              minLength={5}
-              type="password"
-              autoComplete={isSignup ? "new-password" : "current-password"}
-              value={password}
-              aria-invalid={Boolean(fieldErrors.password)}
-              aria-describedby={fieldErrors.password ? "password-error" : undefined}
-              onChange={(event) => {
-                setPassword(event.target.value);
-                clearFieldError("password");
-              }}
-              className={`h-11 w-full rounded-md border bg-[var(--color-app-background)] px-3 text-[var(--color-app-foreground)] outline-none transition placeholder:text-slate-400 focus:border-[var(--color-link-hover)] focus:ring-2 focus:ring-[var(--color-focus-ring)] ${
-                fieldErrors.password
-                  ? "border-red-400"
-                  : "border-[var(--color-header-border)]"
-              }`}
-            />
-            {fieldErrors.password ? (
-              <p
-                className="mt-2 text-sm font-medium text-red-400"
-                id="password-error"
-              >
-                {fieldErrors.password}
-              </p>
-            ) : null}
-          </label>
-
-          {isSignup ? (
-            <label className="block">
-              <span className="mb-2 block text-sm font-semibold text-[var(--color-app-foreground)]">
-                Address
-              </span>
-              <input
-                required
-                type="text"
-                autoComplete="street-address"
-                value={address}
-                aria-invalid={Boolean(fieldErrors.address)}
-                aria-describedby={fieldErrors.address ? "address-error" : undefined}
-                onChange={(event) => {
-                  setAddress(event.target.value);
-                  clearFieldError("address");
-                }}
-                className={`h-11 w-full rounded-md border bg-[var(--color-app-background)] px-3 text-[var(--color-app-foreground)] outline-none transition placeholder:text-slate-400 focus:border-[var(--color-link-hover)] focus:ring-2 focus:ring-[var(--color-focus-ring)] ${
-                  fieldErrors.address
-                    ? "border-red-400"
-                    : "border-[var(--color-header-border)]"
-                }`}
-              />
-              {fieldErrors.address ? (
-                <p
-                  className="mt-2 text-sm font-medium text-red-400"
-                  id="address-error"
-                >
-                  {fieldErrors.address}
-                </p>
-              ) : null}
-            </label>
-          ) : null}
-
+        <div aria-live="polite">
           {message ? (
             <p
-            className={`text-sm font-medium ${
-              status === "success" ? "text-emerald-400" : "text-red-400"
-            }`}
-              role="status"
+              className={`mt-6 border-l-4 py-1 pl-3 text-sm font-semibold ${
+                status === "success"
+                  ? "border-[var(--color-success)] text-[var(--color-success)]"
+                  : "border-[var(--color-error)] text-[var(--color-error)]"
+              }`}
             >
               {message}
             </p>
           ) : null}
+        </div>
 
-          <button
-            type="submit"
-            disabled={status === "submitting" || status === "success"}
-            className="mt-2 h-11 w-full rounded-md border border-[var(--color-app-foreground)] px-4 text-sm font-bold text-[var(--color-app-foreground)] transition hover:bg-[var(--color-app-foreground)] hover:text-[var(--color-button-hover-text)] disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {status === "submitting"
-              ? "Please wait..."
-              : isSignup
-                ? "Create account"
-                : "Login"}
-          </button>
-        </form>
+        <button
+          type="submit"
+          disabled={status === "submitting" || status === "success"}
+          className={`mt-6 w-full ${primaryButton} disabled:cursor-not-allowed disabled:opacity-60`}
+        >
+          {status === "submitting"
+            ? isSignup
+              ? "Criando conta…"
+              : "Entrando…"
+            : isSignup
+              ? "Criar conta"
+              : "Entrar"}
+        </button>
+      </form>
 
-        <p className="mt-6 text-center text-sm text-[var(--color-app-foreground)]">
-          {alternateText}{" "}
-          <Link
-            href={alternateHref}
-            className="font-bold text-[var(--color-link-hover)] transition hover:underline"
-          >
-            {alternateAction}
-          </Link>
+      <p className="border-t border-[var(--color-header-border)] px-6 py-5 text-[var(--color-muted)] sm:px-8">
+        {alternateText}{" "}
+        <Link
+          href={alternateHref}
+          className={`font-bold text-[var(--color-app-foreground)] underline underline-offset-4 transition hover:text-[var(--color-link-hover)] ${focusRing}`}
+        >
+          {alternateAction}
+        </Link>
+      </p>
+    </div>
+  );
+}
+
+function Field({
+  autoComplete,
+  error,
+  field,
+  hint,
+  label,
+  minLength,
+  onChange,
+  type,
+  value,
+}: {
+  autoComplete: string;
+  error?: string;
+  field: AuthField;
+  hint?: string;
+  label: string;
+  minLength?: number;
+  onChange: (value: string) => void;
+  type: "email" | "password" | "text";
+  value: string;
+}) {
+  const id = `auth-${field}`;
+  const describedBy = [hint ? `${id}-hint` : "", error ? `${id}-error` : ""]
+    .filter(Boolean)
+    .join(" ");
+
+  return (
+    <div>
+      <label htmlFor={id} className="block text-sm font-bold">
+        {label}
+      </label>
+      {hint ? (
+        <p id={`${id}-hint`} className="mt-1 text-sm text-[var(--color-muted)]">
+          {hint}
         </p>
-      </div>
-    </section>
+      ) : null}
+      <input
+        required
+        id={id}
+        name={field}
+        type={type}
+        autoComplete={autoComplete}
+        minLength={minLength}
+        value={value}
+        aria-invalid={Boolean(error)}
+        aria-describedby={describedBy || undefined}
+        onChange={(event) => onChange(event.target.value)}
+        className={`mt-2 h-12 w-full rounded-md border bg-[var(--color-app-background)] px-4 text-base text-[var(--color-app-foreground)] transition-colors autofill:shadow-[inset_0_0_0_3rem_var(--color-app-background)] autofill:[-webkit-text-fill-color:var(--color-app-foreground)] ${focusRing} ${
+          error
+            ? "border-[var(--color-error)]"
+            : "border-[var(--color-muted)] hover:border-[var(--color-app-foreground)] focus-visible:border-[var(--color-app-foreground)]"
+        }`}
+      />
+      {error ? (
+        <p id={`${id}-error`} className="mt-2 text-sm font-semibold text-[var(--color-error)]">
+          {error}
+        </p>
+      ) : null}
+    </div>
   );
 }

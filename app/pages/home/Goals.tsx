@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { odsGoals } from "@/lib/ods";
-import { SectionHeader } from "./SectionHeader";
-import { stagger } from "./styles";
+import { SectionHeader } from "@/components/SectionHeader";
+import { stagger } from "@/components/styles";
 
 const tileClassName =
   "flex min-h-40 flex-col justify-between gap-4 p-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-app-foreground)]";

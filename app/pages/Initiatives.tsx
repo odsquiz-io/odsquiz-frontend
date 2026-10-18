@@ -2,18 +2,21 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
-import { Header } from "@/components/Header";
 import { LoginRequired } from "@/components/LoginRequired";
+import { PageHeader } from "@/components/PageHeader";
+import { SectionHeader } from "@/components/SectionHeader";
+import { primaryButton } from "@/components/styles";
 import { useAuthToken } from "@/lib/auth";
 import { fetchInitiatives } from "./initiatives/api";
 import { InitiativeForm } from "./initiatives/InitiativeForm";
 import { InitiativesList } from "./initiatives/InitiativesList";
+import { MapFrame, MapLoading } from "./initiatives/MapFrame";
 import type { Initiative, ListStatus } from "./initiatives/types";
 
 const InitiativesMap = dynamic(
   () =>
     import("./initiatives/map/InitiativesMap").then((mod) => mod.InitiativesMap),
-  { ssr: false },
+  { loading: MapLoading, ssr: false },
 );
 
 export default function Initiatives() {
@@ -68,36 +71,71 @@ export default function Initiatives() {
   }
 
   return (
-    <main className="relative min-h-screen bg-[var(--color-app-background)] transition-colors">
-      <Header />
+    <main className="min-h-svh flex-1 bg-[var(--color-app-background)] pb-28 text-[var(--color-app-foreground)] transition-colors">
+      <div className="mx-auto max-w-6xl px-4 pt-36 sm:px-6 sm:pt-44">
+        <PageHeader
+          label="Iniciativas"
+          title="Quem tira os ODS do papel."
+          actions={
+            token ? (
+              <a href="#new-initiative" className={primaryButton}>
+                Cadastre a sua iniciativa
+                <span aria-hidden="true">&nbsp;↓</span>
+              </a>
+            ) : null
+          }
+        >
+          Iniciativas são projetos comunitários que trabalham pelos Objetivos de
+          Desenvolvimento Sustentável. Aqui você vê onde cada uma fica e o
+          objetivo em que mais atua — e, com uma conta, pode cadastrar a sua.
+        </PageHeader>
 
-      <section className="mx-auto flex min-h-screen w-full max-w-5xl flex-col px-4 pb-12 pt-28 sm:px-6 sm:pt-32">
-        <div className="mb-6">
-          <p className="text-sm font-semibold uppercase tracking-[0.12em] text-[var(--color-link-hover)]">
-            ODS Quiz
-          </p>
-          <h1 className="mt-2 text-3xl font-extrabold text-[var(--color-app-foreground)]">
-            Iniciativas
-          </h1>
-        </div>
-
-        {!token ? (
-          <LoginRequired message="Entre na sua conta para cadastrar uma nova iniciativa." />
-        ) : (
+        {token === null ? (
+          <LoginRequired
+            className="mt-12 max-w-2xl"
+            message="Entre na sua conta para ver o mapa de iniciativas e cadastrar a sua."
+          />
+        ) : token ? (
           <>
-            <div className="mb-8 h-96">
-              <InitiativesMap initiatives={initiatives} />
-            </div>
-            <InitiativeForm token={token} onCreated={reloadInitiatives} />
+            <figure className="mt-12 sm:mt-16">
+              <MapFrame band className="h-88 sm:h-128">
+                <InitiativesMap initiatives={initiatives} />
+              </MapFrame>
+              <figcaption className="mt-3 text-sm text-[var(--color-muted)]">
+                Clique em um marcador para ver a iniciativa. Os círculos
+                numerados reúnem iniciativas próximas: clique neles para
+                aproximar.
+              </figcaption>
+            </figure>
+
             <InitiativesList
               initiatives={initiatives}
               message={listMessage}
               status={listStatus}
               onRefresh={reloadInitiatives}
             />
+
+            <section
+              id="new-initiative"
+              aria-labelledby="new-initiative-title"
+              className="pt-24"
+            >
+              <SectionHeader
+                id="new-initiative-title"
+                label="Faça parte do mapa"
+                title="Cadastre uma iniciativa."
+              >
+                Conhece um projeto que trabalha pelos ODS, ou faz parte de um?
+                Coloque-o no mapa para que mais gente possa encontrá-lo. Todos
+                os campos são obrigatórios.
+              </SectionHeader>
+              <div className="mt-12 max-w-3xl">
+                <InitiativeForm token={token} onCreated={reloadInitiatives} />
+              </div>
+            </section>
           </>
-        )}
-      </section>
+        ) : null}
+      </div>
     </main>
   );
 }

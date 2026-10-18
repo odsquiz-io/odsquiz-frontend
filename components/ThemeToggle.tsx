@@ -1,60 +1,54 @@
 "use client";
 
-import { useEffect, useState } from "react";
-
-type Theme = "dark" | "light";
-
 const storageKey = "odsquiz-theme";
 
-function applyTheme(theme: Theme) {
+function toggleTheme() {
   const root = document.documentElement;
+  const theme = root.dataset.theme === "light" ? "dark" : "light";
 
   root.dataset.theme = theme;
   root.classList.toggle("light", theme === "light");
   root.classList.toggle("dark", theme === "dark");
-}
 
-function getPreferredTheme(): Theme {
-  if (typeof window === "undefined") {
-    return "dark";
-  }
-
-  const savedTheme = window.localStorage.getItem(storageKey);
-
-  if (savedTheme === "dark" || savedTheme === "light") {
-    return savedTheme;
-  }
-
-  return window.matchMedia("(prefers-color-scheme: light)").matches
-    ? "light"
-    : "dark";
-}
-
-export function ThemeToggle() {
-  const [theme, setTheme] = useState<Theme>(getPreferredTheme);
-
-  useEffect(() => {
-    applyTheme(theme);
+  try {
     window.localStorage.setItem(storageKey, theme);
-  }, [theme]);
+  } catch {
+    // Storage can be blocked; the choice still holds until the next page load.
+  }
+}
 
-  const nextTheme = theme === "dark" ? "light" : "dark";
-  const toggleTheme = () => {
-    applyTheme(nextTheme);
-    setTheme(nextTheme);
-  };
+const iconProps = {
+  viewBox: "0 0 24 24",
+  fill: "none",
+  stroke: "currentColor",
+  strokeWidth: 2,
+  strokeLinecap: "round",
+  strokeLinejoin: "round",
+  "aria-hidden": true,
+} as const;
 
+export function ThemeToggle({ className = "" }: { className?: string }) {
   return (
     <button
       type="button"
-      aria-label="Toggle color mode"
-      title="Toggle color mode"
+      aria-label="Alternar tema"
+      title="Alternar tema"
       onClick={toggleTheme}
-      className="grid h-[2.5rem] w-[2.5rem] place-items-center rounded-[var(--size-theme-toggle-radius)] border border-[var(--color-header-border)] bg-[var(--color-theme-toggle-background)] text-[1.125rem] text-[var(--color-app-foreground)] transition hover:border-[var(--color-link-hover)] hover:bg-[var(--color-theme-toggle-hover)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-header-background)]"
+      className={className}
     >
-      <span aria-hidden="true" suppressHydrationWarning>
-        {theme === "dark" ? "☀" : "☾"}
-      </span>
+      <svg
+        {...iconProps}
+        className="size-4.5 [:root[data-theme=light]_&]:hidden"
+      >
+        <circle cx="12" cy="12" r="5" />
+        <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+      </svg>
+      <svg
+        {...iconProps}
+        className="hidden size-4.5 [:root[data-theme=light]_&]:block"
+      >
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+      </svg>
     </button>
   );
 }

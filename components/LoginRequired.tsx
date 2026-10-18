@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { OdsBand } from "./OdsBand";
+import { loadIn, primaryButton, surface } from "./styles";
 
 export function LoginRequired({
   className = "",
@@ -9,16 +11,18 @@ export function LoginRequired({
 }) {
   return (
     <div
-      className={`rounded-lg border border-[var(--color-header-border)] bg-[var(--color-header-background)] p-5 text-[var(--color-app-foreground)] shadow-2xl shadow-black/20 ${className}`}
+      className={`overflow-hidden text-[var(--color-app-foreground)] ${surface} ${loadIn} ${className}`}
     >
-      <h2 className="text-xl font-bold">Login necessário</h2>
-      <p className="mt-2 text-sm">{message}</p>
-      <Link
-        href="/login"
-        className="mt-5 inline-flex min-h-11 items-center rounded-md border border-[var(--color-app-foreground)] px-4 text-sm font-bold text-[var(--color-app-foreground)] transition hover:bg-[var(--color-app-foreground)] hover:text-[var(--color-button-hover-text)]"
-      >
-        Fazer login
-      </Link>
+      <OdsBand className="h-1.5" />
+      <div className="p-6 sm:p-8">
+        <h2 className="text-2xl font-extrabold [font-stretch:85%]">
+          Login necessário
+        </h2>
+        <p className="mt-2 text-[var(--color-muted)]">{message}</p>
+        <Link href="/login" className={`mt-6 ${primaryButton}`}>
+          Fazer login
+        </Link>
+      </div>
     </div>
   );
 }
