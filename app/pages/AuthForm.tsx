@@ -30,6 +30,7 @@ type AuthField = "name" | "email" | "password" | "cep" | "address" | "city" | "s
 type AuthFieldErrors = Partial<Record<AuthField, string>>;
 
 type ApiErrorCode =
+  | "account_suspended"
   | "email_already_exists"
   | "internal_error"
   | "invalid_credentials"
@@ -75,6 +76,7 @@ function getApiErrorCode(payload: unknown): ApiErrorCode | undefined {
   const { code } = payload as ApiErrorPayload;
 
   if (
+    code === "account_suspended" ||
     code === "email_already_exists" ||
     code === "internal_error" ||
     code === "invalid_credentials" ||
@@ -117,6 +119,13 @@ function getApiErrorResult(
   mode: AuthMode,
 ): ApiErrorResult {
   const code = getApiErrorCode(payload);
+
+  if (code === "account_suspended") {
+    return {
+      message:
+        "Esta conta foi suspensa pela moderação do ODS Quiz e não pode entrar no momento.",
+    };
+  }
 
   if (code === "email_already_exists") {
     return {

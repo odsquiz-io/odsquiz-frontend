@@ -24,9 +24,11 @@ WORKDIR /app
 ARG AUTH_API_URL=http://localhost:8080
 ARG INITIATIVES_API_URL=http://localhost:8081
 ARG QUIZ_API_URL=http://localhost:8082
+ARG ADMIN_API_URL=http://localhost:8083
 ENV AUTH_API_URL=${AUTH_API_URL}
 ENV INITIATIVES_API_URL=${INITIATIVES_API_URL}
 ENV QUIZ_API_URL=${QUIZ_API_URL}
+ENV ADMIN_API_URL=${ADMIN_API_URL}
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NODE_ENV=production
@@ -47,12 +49,14 @@ WORKDIR /app
 ARG AUTH_API_URL=http://localhost:8080
 ARG INITIATIVES_API_URL=http://localhost:8081
 ARG QUIZ_API_URL=http://localhost:8082
+ARG ADMIN_API_URL=http://localhost:8083
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 ENV AUTH_API_URL=${AUTH_API_URL}
 ENV INITIATIVES_API_URL=${INITIATIVES_API_URL}
 ENV QUIZ_API_URL=${QUIZ_API_URL}
+ENV ADMIN_API_URL=${ADMIN_API_URL}
 
 # Copy built files and public assets
 COPY --from=builder /app/.next ./.next

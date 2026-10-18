@@ -1,5 +1,6 @@
-import { cityState, lookupCep } from "@/lib/cep";
-import type { Coordinates, Initiative, InitiativeFormState } from "./types";
+import { AccountSuspendedError, isAccountSuspended } from "@/components/SessionProvider";
+import { cityState, lookupCep, states } from "@/lib/cep";
+import type { Coordinates, Initiative, InitiativeFormState, Place } from "./types";
 
 export async function fetchInitiatives(token: string) {
   const payload = await request(
@@ -32,6 +33,7 @@ export async function fetchInitiative(token: string, id: string) {
 export async function createInitiative(
   form: InitiativeFormState,
   coordinates: Coordinates,
+  place: Place,
   token: string,
 ) {
   await request(
@@ -43,6 +45,8 @@ export async function createInitiative(
         name: form.name.trim(),
         address: form.address.trim(),
         cep: form.cep.trim(),
+        city: place.city,
+        state: place.state,
         email_owner: form.emailOwner.trim(),
         acting_area: form.actingArea.trim(),
         impact: Number(form.impact),
@@ -64,6 +68,10 @@ export async function lookupAddressByCep(cep: string) {
     address,
     cep: found.cep,
     coordinates: found.coordinates,
+    place: {
+      city: found.city,
+      state: states.includes(found.state) ? found.state : "",
+    },
     geocodingQuery: joinAddress(address, found.cep, "Brasil"),
   };
 }
@@ -73,7 +81,7 @@ async function request(url: string, init: RequestInit, fallbackMessage: string) 
   const payload = await readPayload(response);
 
   if (!response.ok) {
-    throw new Error(apiMessage(payload, fallbackMessage));
+    throw errorFrom(response.status, payload, fallbackMessage);
   }
 
   return payload;
@@ -89,12 +97,23 @@ async function readPayload(response: Response): Promise<unknown> {
   }
 }
 
-function apiMessage(payload: unknown, fallback: string) {
-  return isRecord(payload) && typeof payload.message === "string"
-    ? payload.message
-    : isRecord(payload) && typeof payload.error === "string"
-      ? payload.error
-      : fallback;
+// Chosen by status or code: the API replies with codes or English text, never with page copy.
+function errorFrom(status: number, payload: unknown, fallback: string) {
+  if (isAccountSuspended(payload)) {
+    return new AccountSuspendedError(
+      "Sua conta está suspensa, por isso não é possível cadastrar nem alterar iniciativas.",
+    );
+  }
+
+  if (status === 401) {
+    return new Error("Sua sessão expirou. Entre de novo para continuar.");
+  }
+
+  if (isRecord(payload) && payload.code === "initiative_not_found") {
+    return new Error("Não encontramos esta iniciativa.");
+  }
+
+  return new Error(fallback);
 }
 
 function authHeader(token: string) {

@@ -1,0 +1,63 @@
+:root {
+  --admin-canvas: #0c0e11;
+  --admin-surface: #13161b;
+  --admin-raised: #1a1e24;
+  --admin-border: #262b33;
+  --admin-control: #646d79;
+  --admin-text: #e7eaee;
+  --admin-muted: #9ba4b0;
+  --admin-accent: #8ab4ff;
+  --admin-accent-ink: #0c0e11;
+  --admin-accent-soft: #16233b;
+  --admin-danger: #ff8a80;
+  --admin-danger-ink: #0c0e11;
+  --admin-danger-soft: #2a1517;
+  --admin-success: #5fd39a;
+  --admin-success-soft: #0f2a1d;
+  --admin-warning: #f0c05a;
+  --admin-warning-soft: #2a2210;
+  --admin-scheme: dark;
+}
+
+:root[data-theme="light"],
+:root.light {
+  --admin-canvas: #f3f4f6;
+  --admin-surface: #ffffff;
+  --admin-raised: #f7f8fa;
+  --admin-border: #e3e6ea;
+  --admin-control: #848c97;
+  --admin-text: #14171c;
+  --admin-muted: #59626e;
+  --admin-accent: #2457c5;
+  --admin-accent-ink: #ffffff;
+  --admin-accent-soft: #e8effc;
+  --admin-danger: #b3261e;
+  --admin-danger-ink: #ffffff;
+  --admin-danger-soft: #fdecea;
+  --admin-success: #18794e;
+  --admin-success-soft: #e6f4ec;
+  --admin-warning: #8a5a00;
+  --admin-warning-soft: #fbf1dc;
+  --admin-scheme: light;
+}
+
+@layer base {
+  .admin {
+    color-scheme: var(--admin-scheme);
+    background: var(--admin-canvas);
+    color: var(--admin-text);
+    font-family: var(--font-admin), ui-sans-serif, system-ui, sans-serif;
+  }
+
+  .admin :is(h1, h2, h3) {
+    font-family: inherit;
+  }
+}
+
+body:has(.admin) {
+  background: var(--admin-canvas);
+}
+
+body:has(.admin dialog[open]) {
+  overflow: hidden;
+}

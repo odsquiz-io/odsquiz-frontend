@@ -2,6 +2,7 @@ import dynamic from "next/dynamic";
 import type { ChangeEvent, ReactNode, SyntheticEvent } from "react";
 import { useState } from "react";
 import { OdsBand } from "@/components/OdsBand";
+import { AccountSuspendedError, useSession } from "@/components/SessionProvider";
 import {
   control,
   controlBorder,
@@ -21,6 +22,7 @@ import type {
   InitiativeFieldErrors,
   InitiativeFormField,
   InitiativeFormState,
+  Place,
   SubmitStatus,
 } from "./types";
 import { initialFormState, validateInitiativeForm } from "./validation";
@@ -136,8 +138,10 @@ export function InitiativeForm({
   onCreated: () => void;
   token: string;
 }) {
+  const { signOutSuspended } = useSession();
   const [form, setForm] = useState<InitiativeFormState>(initialFormState);
   const [coordinates, setCoordinates] = useState<Coordinates | null>(null);
+  const [place, setPlace] = useState<Place | null>(null);
   const [fieldErrors, setFieldErrors] = useState<InitiativeFieldErrors>({});
   const [status, setStatus] = useState<SubmitStatus>("idle");
   const [cepLookupStatus, setCepLookupStatus] =
@@ -150,6 +154,7 @@ export function InitiativeForm({
 
     if (field === "cep") {
       setCoordinates(null);
+      setPlace(null);
       setCepLookupStatus("idle");
       setGeoMessage("");
     }
@@ -165,6 +170,7 @@ export function InitiativeForm({
     setMessage("");
     setGeoMessage("");
     setCoordinates(null);
+    setPlace(null);
     setCepLookupStatus("loading");
 
     try {
@@ -181,6 +187,7 @@ export function InitiativeForm({
         cep: lookupResult.cep,
       }));
       setCoordinates(nextCoordinates ?? null);
+      setPlace(lookupResult.place);
       setFieldErrors((currentErrors) => {
         const nextErrors = { ...currentErrors };
         delete nextErrors.cep;
@@ -217,7 +224,7 @@ export function InitiativeForm({
       return;
     }
 
-    if (!coordinates) {
+    if (!coordinates || !place) {
       setFieldErrors({ cep: "Busque o CEP para marcar a iniciativa no mapa." });
       return;
     }
@@ -226,15 +233,20 @@ export function InitiativeForm({
     setFieldErrors({});
 
     try {
-      await createInitiative(form, coordinates, token);
+      await createInitiative(form, coordinates, place, token);
       setStatus("success");
       setForm(initialFormState);
       setCoordinates(null);
+      setPlace(null);
       setCepLookupStatus("idle");
       setGeoMessage("");
       setMessage("Iniciativa cadastrada com sucesso.");
       onCreated();
     } catch (error) {
+      if (error instanceof AccountSuspendedError) {
+        signOutSuspended();
+      }
+
       setMessage(
         error instanceof TypeError
           ? "Não foi possível conectar ao serviço de iniciativas."

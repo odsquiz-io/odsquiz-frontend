@@ -1,0 +1,71 @@
+/* Data hues checked with the dataviz validator against --admin-surface in both themes; the
+   dark admin accent is too light for data marks, so single series use --mx-series. */
+.metrics {
+  --mx-series: #3987e5;
+
+  /* Answer options 1-4, from the lowest to the highest score; dark mode flips the anchor. */
+  --mx-ord-1: #1c5cab;
+  --mx-ord-2: #3987e5;
+  --mx-ord-3: #6da7ec;
+  --mx-ord-4: #b7d3f6;
+  --mx-ord-none: #4a515b;
+  --mx-ord-1-ink: #ffffff;
+  --mx-ord-2-ink: #0b0b0b;
+  --mx-ord-3-ink: #0b0b0b;
+  --mx-ord-4-ink: #0b0b0b;
+  --mx-ord-none-ink: #ffffff;
+}
+
+:root[data-theme="light"] .metrics,
+:root.light .metrics {
+  --mx-series: #2a78d6;
+
+  --mx-ord-1: #86b6ef;
+  --mx-ord-2: #5598e7;
+  --mx-ord-3: #256abf;
+  --mx-ord-4: #104281;
+  --mx-ord-none: #c5cad1;
+  --mx-ord-1-ink: #0b0b0b;
+  --mx-ord-2-ink: #0b0b0b;
+  --mx-ord-3-ink: #ffffff;
+  --mx-ord-4-ink: #ffffff;
+  --mx-ord-none-ink: #0b0b0b;
+}
+
+.metrics-busy {
+  opacity: 0.55;
+  transition: opacity 160ms ease;
+}
+
+.metrics-skeleton {
+  display: block;
+  background: var(--admin-border);
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .metrics-skeleton {
+    animation: metrics-pulse 1.4s ease-in-out infinite;
+  }
+}
+
+@keyframes metrics-pulse {
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.metrics .recharts-cartesian-axis-tick-value,
+.metrics .recharts-label-list {
+  font-variant-numeric: tabular-nums;
+}
+
+.metrics .recharts-surface:focus {
+  outline: none;
+}
+
+.metrics .recharts-surface:focus-visible {
+  outline: 2px solid var(--admin-accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}

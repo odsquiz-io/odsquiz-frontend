@@ -2,7 +2,11 @@ import type { ChangeEvent, ReactNode, SyntheticEvent } from "react";
 import { useState } from "react";
 import { flushSync } from "react-dom";
 import { OdsBand } from "@/components/OdsBand";
-import type { SessionUser } from "@/components/SessionProvider";
+import {
+  AccountSuspendedError,
+  type SessionUser,
+  useSession,
+} from "@/components/SessionProvider";
 import {
   control,
   controlBorder,
@@ -59,6 +63,7 @@ export function AccountForm({
   token: string;
   user: SessionUser;
 }) {
+  const { signOutSuspended } = useSession();
   const [form, setForm] = useState<AccountValues>({
     name: user.name,
     cep: formatCep(user.cep) ?? "",
@@ -153,6 +158,10 @@ export function AccountForm({
 
       onSaved(updatedUser);
     } catch (error) {
+      if (error instanceof AccountSuspendedError) {
+        signOutSuspended();
+      }
+
       setSaving(false);
       setMessage(
         error instanceof TypeError

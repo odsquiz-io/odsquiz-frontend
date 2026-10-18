@@ -7,6 +7,7 @@ export type SessionUser = {
   id: string;
   name: string;
   email: string;
+  role: "user" | "admin";
   address: string;
   cep: string;
   city: string;
@@ -23,20 +24,35 @@ type SessionState = {
 };
 
 type Session = SessionState & {
+  // Set when the session ended because the account was suspended, until the notice is dismissed.
+  suspended: boolean;
   signOut: () => void;
+  signOutSuspended: () => void;
+  dismissSuspended: () => void;
   updateUser: (user: SessionUser) => void;
 };
+
+export class AccountSuspendedError extends Error {}
+
+export function isAccountSuspended(payload: unknown) {
+  return (payload as { code?: unknown } | null)?.code === "account_suspended";
+}
 
 const SIGNED_OUT: SessionState = { status: "unauthenticated", user: null };
 
 const SessionContext = createContext<Session>({
   status: "loading",
   user: null,
+  suspended: false,
   signOut: () => {},
+  signOutSuspended: () => {},
+  dismissSuspended: () => {},
   updateUser: () => {},
 });
 
-async function fetchSession(signal: AbortSignal): Promise<SessionState> {
+async function fetchSession(
+  signal: AbortSignal,
+): Promise<SessionState & { suspended?: boolean }> {
   const token = getAuthToken();
 
   if (!token) {
@@ -49,11 +65,15 @@ async function fetchSession(signal: AbortSignal): Promise<SessionState> {
   });
 
   if (!response.ok) {
-    if (response.status === 401) {
+    const suspended =
+      response.status === 403 &&
+      isAccountSuspended(await response.json().catch(() => undefined));
+
+    if (response.status === 401 || suspended) {
       clearAuthToken();
     }
 
-    return SIGNED_OUT;
+    return { ...SIGNED_OUT, suspended };
   }
 
   return {
@@ -67,13 +87,20 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     status: "loading",
     user: null,
   });
+  const [suspended, setSuspended] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
 
     const sync = () =>
       fetchSession(controller.signal)
-        .then(setState)
+        .then(({ suspended: ended, ...nextState }) => {
+          setState(nextState);
+
+          if (ended) {
+            setSuspended(true);
+          }
+        })
         .catch(() => {
           if (!controller.signal.aborted) {
             setState(SIGNED_OUT);
@@ -92,14 +119,20 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo(
     () => ({
       ...state,
+      suspended,
       signOut: clearAuthToken,
+      signOutSuspended: () => {
+        setSuspended(true);
+        clearAuthToken();
+      },
+      dismissSuspended: () => setSuspended(false),
       // Ignores a reply for an account that is no longer the one signed in.
       updateUser: (user: SessionUser) =>
         setState((current) =>
           current.user?.id === user.id ? { status: "authenticated", user } : current,
         ),
     }),
-    [state],
+    [state, suspended],
   );
 
   return (

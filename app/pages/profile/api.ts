@@ -1,4 +1,8 @@
-import type { SessionUser } from "@/components/SessionProvider";
+import {
+  AccountSuspendedError,
+  isAccountSuspended,
+  type SessionUser,
+} from "@/components/SessionProvider";
 
 type AccountUpdate = Pick<
   SessionUser,
@@ -15,11 +19,19 @@ export async function updateAccount(account: AccountUpdate, token: string) {
     body: JSON.stringify(account),
   });
 
+  const payload = await readPayload(response);
+
+  if (isAccountSuspended(payload)) {
+    throw new AccountSuspendedError(
+      "Sua conta está suspensa, por isso não é possível salvar alterações.",
+    );
+  }
+
   if (!response.ok) {
     throw new Error(errorMessage(response.status));
   }
 
-  return (await readPayload(response)) as SessionUser;
+  return payload as SessionUser;
 }
 
 async function readPayload(response: Response): Promise<unknown> {
