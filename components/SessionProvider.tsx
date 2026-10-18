@@ -9,7 +9,12 @@ export type SessionUser = {
   email: string;
   address: string;
   cep: string;
+  city: string;
+  state: string;
+  lat: number;
+  lon: number;
   points: number;
+  created_at: string;
 };
 
 type SessionState = {
@@ -17,12 +22,18 @@ type SessionState = {
   user: SessionUser | null;
 };
 
+type Session = SessionState & {
+  signOut: () => void;
+  updateUser: (user: SessionUser) => void;
+};
+
 const SIGNED_OUT: SessionState = { status: "unauthenticated", user: null };
 
-const SessionContext = createContext<SessionState & { signOut: () => void }>({
+const SessionContext = createContext<Session>({
   status: "loading",
   user: null,
   signOut: () => {},
+  updateUser: () => {},
 });
 
 async function fetchSession(signal: AbortSignal): Promise<SessionState> {
@@ -78,7 +89,18 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const value = useMemo(() => ({ ...state, signOut: clearAuthToken }), [state]);
+  const value = useMemo(
+    () => ({
+      ...state,
+      signOut: clearAuthToken,
+      // Ignores a reply for an account that is no longer the one signed in.
+      updateUser: (user: SessionUser) =>
+        setState((current) =>
+          current.user?.id === user.id ? { status: "authenticated", user } : current,
+        ),
+    }),
+    [state],
+  );
 
   return (
     <SessionContext.Provider value={value}>{children}</SessionContext.Provider>

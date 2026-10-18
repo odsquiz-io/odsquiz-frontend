@@ -2,12 +2,22 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { SyntheticEvent } from "react";
+import type { ChangeEvent, ReactNode, SyntheticEvent } from "react";
 import { useState } from "react";
 import { flushSync } from "react-dom";
 import { OdsBand } from "@/components/OdsBand";
-import { focusRing, primaryButton, surface } from "@/components/styles";
+import {
+  control,
+  controlBorder,
+  focusRing,
+  primaryButton,
+  secondaryButton,
+  selectChevron,
+  surface,
+} from "@/components/styles";
 import { storeAuthToken } from "@/lib/auth";
+import type { Coordinates } from "@/lib/cep";
+import { lookupCep, states } from "@/lib/cep";
 
 type AuthMode = "login" | "signup";
 
@@ -15,7 +25,7 @@ type AuthFormProps = {
   mode: AuthMode;
 };
 
-type AuthField = "name" | "email" | "password" | "address";
+type AuthField = "name" | "email" | "password" | "cep" | "address" | "city" | "state";
 
 type AuthFieldErrors = Partial<Record<AuthField, string>>;
 
@@ -151,16 +161,22 @@ async function readResponse(response: Response): Promise<unknown> {
 
 function validateAuthForm({
   address,
+  cepDigits,
+  city,
   email,
   isSignup,
   name,
   password,
+  state,
 }: {
   address: string;
+  cepDigits: string;
+  city: string;
   email: string;
   isSignup: boolean;
   name: string;
   password: string;
+  state: string;
 }) {
   const errors: AuthFieldErrors = {};
   const trimmedEmail = email.trim();
@@ -181,8 +197,20 @@ function validateAuthForm({
     errors.password = "A senha precisa ter pelo menos 5 caracteres.";
   }
 
+  if (isSignup && cepDigits.length !== 8) {
+    errors.cep = "Informe um CEP com 8 números.";
+  }
+
   if (isSignup && !address.trim()) {
     errors.address = "Informe seu endereço.";
+  }
+
+  if (isSignup && !city.trim()) {
+    errors.city = "Informe sua cidade.";
+  }
+
+  if (isSignup && !state) {
+    errors.state = "Selecione seu estado.";
   }
 
   return errors;
@@ -194,7 +222,13 @@ export function AuthForm({ mode }: AuthFormProps) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [cep, setCep] = useState("");
   const [address, setAddress] = useState("");
+  const [city, setCity] = useState("");
+  const [state, setState] = useState("");
+  const [coordinates, setCoordinates] = useState<Coordinates>();
+  const [isLookingUpCep, setIsLookingUpCep] = useState(false);
+  const [cepMessage, setCepMessage] = useState("");
   const [status, setStatus] = useState<"idle" | "submitting" | "success">("idle");
   const [message, setMessage] = useState("");
   const [fieldErrors, setFieldErrors] = useState<AuthFieldErrors>({});
@@ -216,23 +250,62 @@ export function AuthForm({ mode }: AuthFormProps) {
     });
   }
 
+  async function handleCepLookup() {
+    setCepMessage("");
+    setCoordinates(undefined);
+    setIsLookingUpCep(true);
+
+    try {
+      const found = await lookupCep(cep);
+      const street = [found.street, found.district].filter(Boolean).join(", ");
+
+      setAddress((currentAddress) => street || currentAddress);
+      setCity((currentCity) => found.city || currentCity);
+      setState((currentState) => found.state || currentState);
+      setCoordinates(found.coordinates);
+      clearFieldError("cep");
+      clearFieldError("address");
+      clearFieldError("city");
+      clearFieldError("state");
+      setCepMessage(
+        street
+          ? "Endereço encontrado. Confira e acrescente o número."
+          : "Cidade encontrada. Preencha a rua, o número e o bairro.",
+      );
+    } catch (error) {
+      flushSync(() =>
+        setFieldErrors((currentErrors) => ({
+          ...currentErrors,
+          cep: error instanceof Error ? error.message : "Não foi possível buscar esse CEP.",
+        })),
+      );
+      document.getElementById("auth-cep")?.focus();
+    } finally {
+      setIsLookingUpCep(false);
+    }
+  }
+
   async function handleSubmit(event: SyntheticEvent<HTMLFormElement, SubmitEvent>) {
     event.preventDefault();
     setMessage("");
 
+    const cepDigits = cep.replace(/\D/g, "");
     const validationErrors = validateAuthForm({
       address,
+      cepDigits,
+      city,
       email,
       isSignup,
       name,
       password,
+      state,
     });
 
     if (Object.keys(validationErrors).length > 0) {
       // Commits the errors first so the focused field already announces its message.
       flushSync(() => setFieldErrors(validationErrors));
       event.currentTarget
-        .querySelector<HTMLInputElement>('[aria-invalid="true"]')
+        .querySelector<HTMLElement>('[aria-invalid="true"]')
         ?.focus();
       return;
     }
@@ -241,7 +314,7 @@ export function AuthForm({ mode }: AuthFormProps) {
     setStatus("submitting");
 
     const body = isSignup
-      ? { name, email, password, address }
+      ? { name, email, password, address, cep: cepDigits, city, state, ...coordinates }
       : { email, password };
 
     try {
@@ -343,18 +416,85 @@ export function AuthForm({ mode }: AuthFormProps) {
           />
 
           {isSignup ? (
-            <Field
-              autoComplete="street-address"
-              error={fieldErrors.address}
-              field="address"
-              label="Endereço"
-              type="text"
-              value={address}
-              onChange={(value) => {
-                setAddress(value);
-                clearFieldError("address");
-              }}
-            />
+            <>
+              <Field
+                action={
+                  <button
+                    type="button"
+                    disabled={isLookingUpCep}
+                    onClick={handleCepLookup}
+                    className={`shrink-0 ${secondaryButton} disabled:cursor-not-allowed disabled:opacity-60`}
+                  >
+                    {isLookingUpCep ? "Buscando…" : "Buscar"}
+                  </button>
+                }
+                autoComplete="postal-code"
+                error={fieldErrors.cep}
+                field="cep"
+                hint="Digite os 8 números e clique em Buscar para preencher o endereço, a cidade e o estado."
+                inputMode="numeric"
+                label="CEP"
+                type="text"
+                value={cep}
+                onChange={(value) => {
+                  setCep(value);
+                  setCoordinates(undefined);
+                  setCepMessage("");
+                  clearFieldError("cep");
+                }}
+              >
+                <p
+                  role="status"
+                  className={
+                    cepMessage
+                      ? "mt-2 text-sm font-semibold text-[var(--color-success)]"
+                      : undefined
+                  }
+                >
+                  {cepMessage}
+                </p>
+              </Field>
+
+              <Field
+                autoComplete="street-address"
+                error={fieldErrors.address}
+                field="address"
+                hint="Depois de buscar o CEP, acrescente o número e, se houver, o complemento."
+                label="Endereço"
+                type="text"
+                value={address}
+                onChange={(value) => {
+                  setAddress(value);
+                  clearFieldError("address");
+                }}
+              />
+
+              <Field
+                autoComplete="address-level2"
+                error={fieldErrors.city}
+                field="city"
+                label="Cidade"
+                type="text"
+                value={city}
+                onChange={(value) => {
+                  setCity(value);
+                  clearFieldError("city");
+                }}
+              />
+
+              <Field
+                autoComplete="address-level1"
+                error={fieldErrors.state}
+                field="state"
+                label="Estado"
+                options={states}
+                value={state}
+                onChange={(value) => {
+                  setState(value);
+                  clearFieldError("state");
+                }}
+              />
+            </>
           ) : null}
         </div>
 
@@ -401,30 +541,50 @@ export function AuthForm({ mode }: AuthFormProps) {
 }
 
 function Field({
+  action,
   autoComplete,
+  children,
   error,
   field,
   hint,
+  inputMode,
   label,
   minLength,
   onChange,
+  options,
   type,
   value,
 }: {
+  action?: ReactNode;
   autoComplete: string;
+  children?: ReactNode;
   error?: string;
   field: AuthField;
   hint?: string;
+  inputMode?: "numeric";
   label: string;
   minLength?: number;
   onChange: (value: string) => void;
-  type: "email" | "password" | "text";
+  options?: string[];
+  type?: "email" | "password" | "text";
   value: string;
 }) {
   const id = `auth-${field}`;
   const describedBy = [hint ? `${id}-hint` : "", error ? `${id}-error` : ""]
     .filter(Boolean)
     .join(" ");
+  const controlProps = {
+    required: true,
+    id,
+    name: field,
+    autoComplete,
+    value,
+    "aria-invalid": Boolean(error),
+    "aria-describedby": describedBy || undefined,
+    onChange: (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+      onChange(event.target.value),
+  };
+  const controlClassName = `${control} ${controlBorder(Boolean(error))}`;
 
   return (
     <div>
@@ -436,23 +596,34 @@ function Field({
           {hint}
         </p>
       ) : null}
-      <input
-        required
-        id={id}
-        name={field}
-        type={type}
-        autoComplete={autoComplete}
-        minLength={minLength}
-        value={value}
-        aria-invalid={Boolean(error)}
-        aria-describedby={describedBy || undefined}
-        onChange={(event) => onChange(event.target.value)}
-        className={`mt-2 h-12 w-full rounded-md border bg-[var(--color-app-background)] px-4 text-base text-[var(--color-app-foreground)] transition-colors autofill:shadow-[inset_0_0_0_3rem_var(--color-app-background)] autofill:[-webkit-text-fill-color:var(--color-app-foreground)] ${focusRing} ${
-          error
-            ? "border-[var(--color-error)]"
-            : "border-[var(--color-muted)] hover:border-[var(--color-app-foreground)] focus-visible:border-[var(--color-app-foreground)]"
-        }`}
-      />
+      <div className="mt-2 flex flex-col gap-3 sm:flex-row">
+        {options ? (
+          <div className="relative w-full">
+            <select {...controlProps} className={`${controlClassName} appearance-none pr-12`}>
+              <option value="" disabled>
+                Selecione
+              </option>
+              {options.map((option) => (
+                <option key={option}>{option}</option>
+              ))}
+            </select>
+            <span
+              aria-hidden="true"
+              className={selectChevron}
+            />
+          </div>
+        ) : (
+          <input
+            {...controlProps}
+            type={type}
+            inputMode={inputMode}
+            minLength={minLength}
+            className={controlClassName}
+          />
+        )}
+        {action}
+      </div>
+      {children}
       {error ? (
         <p id={`${id}-error`} className="mt-2 text-sm font-semibold text-[var(--color-error)]">
           {error}

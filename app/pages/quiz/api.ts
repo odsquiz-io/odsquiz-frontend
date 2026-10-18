@@ -1,4 +1,4 @@
-import type { QuizQuestion, QuizResult } from "./types";
+import type { QuizQuestion, QuizResult, QuizSubmission } from "./types";
 
 export async function fetchQuizQuestions() {
   const payload = await request(
@@ -33,6 +33,16 @@ export async function submitQuiz(
   );
 
   return payload as QuizResult;
+}
+
+export async function fetchQuizSubmissions(token: string) {
+  const payload = await request(
+    "/api/quiz/submissions",
+    { headers: { Authorization: `Bearer ${token}` } },
+    "Não foi possível carregar seus quizzes.",
+  );
+
+  return Array.isArray(payload) ? (payload as QuizSubmission[]) : [];
 }
 
 async function request(url: string, init: RequestInit, fallbackMessage: string) {

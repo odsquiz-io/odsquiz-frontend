@@ -12,10 +12,7 @@ export type InitiativeFieldErrors = Partial<Record<InitiativeFormField, string>>
 
 export type InitiativeFormState = Record<InitiativeFormField, string>;
 
-export type Coordinates = {
-  lat: number;
-  lon: number;
-};
+export type { Coordinates } from "@/lib/cep";
 
 export type Initiative = {
   id?: string;

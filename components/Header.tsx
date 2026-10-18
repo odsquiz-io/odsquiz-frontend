@@ -9,6 +9,7 @@ import { OdsBand } from "./OdsBand";
 import { useSession } from "./SessionProvider";
 import { eyebrow, focusRing, primaryButton } from "./styles";
 import { ThemeToggle } from "./ThemeToggle";
+import { UserIcon } from "./UserIcon";
 
 const navItems = [
   { label: "Início", href: "/" },
@@ -19,6 +20,17 @@ const navItems = [
 const iconButton = `grid size-10 shrink-0 place-items-center rounded-[var(--size-theme-toggle-radius)] border border-[var(--color-header-border)] bg-[var(--color-theme-toggle-background)] transition hover:border-[var(--color-link-hover)] hover:bg-[var(--color-theme-toggle-hover)] ${focusRing}`;
 
 const barLink = `relative py-2 text-[length:var(--size-header-link-text)] font-semibold transition hover:text-[var(--color-link-hover)] after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:origin-left after:scale-x-0 after:bg-current aria-[current=page]:after:scale-x-100 motion-safe:after:transition-transform motion-safe:after:duration-300 ${focusRing}`;
+
+const iconProps = {
+  viewBox: "0 0 24 24",
+  fill: "none",
+  stroke: "currentColor",
+  strokeWidth: 2,
+  strokeLinecap: "round",
+  strokeLinejoin: "round",
+  className: "size-4.5",
+  "aria-hidden": true,
+} as const;
 
 const menuItemMotion =
   "motion-safe:animate-[slide_300ms_cubic-bezier(0.2,0.8,0.2,1)_both]";
@@ -81,6 +93,7 @@ export function Header() {
           </ul>
 
           <div className="flex shrink-0 items-center gap-2 justify-self-end">
+            <ProfileLink pathname={pathname} onNavigate={closeMenu} />
             <div className="hidden md:flex">
               <AuthArea pathname={pathname} />
             </div>
@@ -216,22 +229,40 @@ function AuthArea({
         title="Sair da conta"
         className={iconButton}
       >
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="size-4.5"
-          aria-hidden="true"
-        >
+        <svg {...iconProps}>
           <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
           <polyline points="16 17 21 12 16 7" />
           <line x1="21" y1="12" x2="9" y2="12" />
         </svg>
       </button>
     </div>
+  );
+}
+
+function ProfileLink({
+  onNavigate,
+  pathname,
+}: {
+  onNavigate: () => void;
+  pathname: string;
+}) {
+  const { user } = useSession();
+
+  if (!user) {
+    return null;
+  }
+
+  return (
+    <Link
+      href="/profile"
+      onClick={onNavigate}
+      aria-current={isCurrent(pathname, "/profile") ? "page" : undefined}
+      aria-label="Seu perfil"
+      title="Seu perfil"
+      className={`${iconButton} aria-[current=page]:border-[var(--color-link-hover)] aria-[current=page]:text-[var(--color-link-hover)]`}
+    >
+      <UserIcon className="size-4.5" />
+    </Link>
   );
 }
 

@@ -100,7 +100,7 @@ function ListFeedback({
   return null;
 }
 
-function InitiativeCard({ initiative }: { initiative: Initiative }) {
+export function InitiativeCard({ initiative }: { initiative: Initiative }) {
   const goal = findGoal(initiative.main_ods);
 
   return (
