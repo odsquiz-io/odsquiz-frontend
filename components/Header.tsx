@@ -7,7 +7,14 @@ import { useRef, useState } from "react";
 import headerLogo from "../public/ods-quiz-wordmark-transparent.png";
 import { OdsBand } from "./OdsBand";
 import { useSession } from "./SessionProvider";
-import { eyebrow, focusRing, primaryButton } from "./styles";
+import {
+  eyebrow,
+  focusRing,
+  loadIn,
+  primaryButton,
+  secondaryButton,
+  surface,
+} from "./styles";
 import { ThemeToggle } from "./ThemeToggle";
 import { UserIcon } from "./UserIcon";
 
@@ -93,6 +100,7 @@ export function Header() {
           </ul>
 
           <div className="flex shrink-0 items-center gap-2 justify-self-end">
+            <AdminLink />
             <ProfileLink pathname={pathname} onNavigate={closeMenu} />
             <div className="hidden md:flex">
               <AuthArea pathname={pathname} />
@@ -171,13 +179,16 @@ export function Header() {
             })}
           </ul>
           <div
-            className={`mt-4 ${menuItemMotion}`}
+            className={`mt-4 grid gap-4 ${menuItemMotion}`}
             style={{ animationDelay: `${navItems.length * 50}ms` }}
           >
+            <AdminLink onNavigate={closeMenu} inMenu />
             <AuthArea pathname={pathname} onNavigate={closeMenu} inMenu />
           </div>
         </div>
       </nav>
+
+      <SuspendedNotice />
     </header>
   );
 }
@@ -236,6 +247,91 @@ function AuthArea({
         </svg>
       </button>
     </div>
+  );
+}
+
+function DashboardIcon() {
+  return (
+    <svg {...iconProps}>
+      <rect width="7" height="9" x="3" y="3" rx="1" />
+      <rect width="7" height="5" x="14" y="3" rx="1" />
+      <rect width="7" height="9" x="14" y="12" rx="1" />
+      <rect width="7" height="5" x="3" y="16" rx="1" />
+    </svg>
+  );
+}
+
+function AdminLink({
+  inMenu = false,
+  onNavigate,
+}: {
+  inMenu?: boolean;
+  onNavigate?: () => void;
+}) {
+  const { user } = useSession();
+
+  if (user?.role !== "admin") {
+    return null;
+  }
+
+  return inMenu ? (
+    <Link href="/admin" onClick={onNavigate} className={`w-full gap-3 ${secondaryButton}`}>
+      <DashboardIcon />
+      Painel administrativo
+    </Link>
+  ) : (
+    // The open menu shows the full link on small screens.
+    <div className="hidden md:flex">
+      <Link
+        href="/admin"
+        aria-label="Painel administrativo"
+        title="Painel administrativo"
+        className={iconButton}
+      >
+        <DashboardIcon />
+      </Link>
+    </div>
+  );
+}
+
+function showOnMount(dialog: HTMLDialogElement | null) {
+  if (dialog && !dialog.open) {
+    dialog.showModal();
+  }
+}
+
+function SuspendedNotice() {
+  const { suspended, dismissSuspended } = useSession();
+
+  if (!suspended) {
+    return null;
+  }
+
+  return (
+    <dialog
+      ref={showOnMount}
+      aria-labelledby="suspended-title"
+      aria-describedby="suspended-description"
+      onClose={dismissSuspended}
+      className={`m-auto w-[calc(100%-2rem)] max-w-md overflow-y-auto p-0 text-[var(--color-app-foreground)] backdrop:bg-black/70 ${surface} ${loadIn}`}
+    >
+      <OdsBand className="h-1.5" />
+      <div className="p-6 sm:p-8">
+        <h2 id="suspended-title" className="text-2xl font-extrabold [font-stretch:85%]">
+          Sua conta foi suspensa
+        </h2>
+        <p id="suspended-description" className="mt-2 text-[var(--color-muted)]">
+          A moderação do ODS Quiz suspendeu sua conta, por isso encerramos sua
+          sessão. Enquanto a suspensão durar, não é possível entrar, enviar
+          respostas do quiz nem cadastrar iniciativas.
+        </p>
+        <form method="dialog">
+          <button type="submit" className={`mt-6 w-full ${primaryButton}`}>
+            Entendi
+          </button>
+        </form>
+      </div>
+    </dialog>
   );
 }
 

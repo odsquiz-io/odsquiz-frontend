@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { LoginRequired } from "@/components/LoginRequired";
 import { OdsBand } from "@/components/OdsBand";
 import { PageHeader } from "@/components/PageHeader";
+import { AccountSuspendedError, useSession } from "@/components/SessionProvider";
 import { useAuthToken } from "@/lib/auth";
 import { odsGoals } from "@/lib/ods";
 import { fetchQuizQuestions, submitQuiz } from "./quiz/api";
@@ -22,6 +23,7 @@ function errorMessage(error: unknown, fallback: string) {
 
 export default function Quiz() {
   const token = useAuthToken();
+  const { signOutSuspended } = useSession();
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [selections, setSelections] = useState<Record<string, string>>({});
   const [result, setResult] = useState<QuizResult | null>(null);
@@ -78,6 +80,10 @@ export default function Quiz() {
       setResult(submission);
       setStatus("success");
     } catch (error) {
+      if (error instanceof AccountSuspendedError) {
+        signOutSuspended();
+      }
+
       setStatus("error");
       setMessage(errorMessage(error, "Algo deu errado ao enviar o quiz."));
     }

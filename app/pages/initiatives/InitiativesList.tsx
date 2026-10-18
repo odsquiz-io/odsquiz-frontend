@@ -5,6 +5,7 @@ import { focusRing, secondaryButton, surface } from "@/components/styles";
 import { findGoal } from "@/lib/ods";
 import { formatNumber, initiativeFacts } from "./format";
 import { InitiativeLinks } from "./InitiativeLinks";
+import { SuspensionNotice } from "./SuspensionNotice";
 import type { Initiative, ListStatus } from "./types";
 
 type InitiativesListProps = {
@@ -108,6 +109,7 @@ export function InitiativeCard({ initiative }: { initiative: Initiative }) {
       <h3 className="wrap-break-word px-5 pt-5 text-2xl font-extrabold leading-tight [font-stretch:85%]">
         {initiative.name || "Iniciativa sem nome"}
       </h3>
+      <SuspensionNotice className="mx-5 mt-4 text-sm" initiative={initiative} />
       {goal ? (
         <p
           className="order-first flex items-center gap-3 px-5 py-4"

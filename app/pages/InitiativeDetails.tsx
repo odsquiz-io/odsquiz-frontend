@@ -12,6 +12,7 @@ import { fetchInitiative } from "./initiatives/api";
 import { initiativeFacts } from "./initiatives/format";
 import { Feedback } from "./initiatives/InitiativesList";
 import { MapFrame, MapLoading } from "./initiatives/MapFrame";
+import { SuspensionNotice } from "./initiatives/SuspensionNotice";
 import type { Initiative } from "./initiatives/types";
 
 const LocationMap = dynamic(
@@ -75,6 +76,10 @@ export default function InitiativeDetails({ id }: { id: string }) {
             }
           />
         </div>
+
+        {loaded ? (
+          <SuspensionNotice className="mt-8 max-w-2xl" initiative={loaded} />
+        ) : null}
 
         {token === null ? (
           <LoginRequired

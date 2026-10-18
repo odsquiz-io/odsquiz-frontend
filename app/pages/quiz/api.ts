@@ -1,3 +1,4 @@
+import { AccountSuspendedError, isAccountSuspended } from "@/components/SessionProvider";
 import type { QuizQuestion, QuizResult, QuizSubmission } from "./types";
 
 export async function fetchQuizQuestions() {
@@ -50,7 +51,7 @@ async function request(url: string, init: RequestInit, fallbackMessage: string) 
   const payload = await readPayload(response);
 
   if (!response.ok) {
-    throw new Error(apiMessage(payload, fallbackMessage));
+    throw errorFrom(response.status, payload, fallbackMessage);
   }
 
   return payload;
@@ -66,12 +67,19 @@ async function readPayload(response: Response): Promise<unknown> {
   }
 }
 
-function apiMessage(payload: unknown, fallback: string) {
-  return isRecord(payload) && typeof payload.message === "string"
-    ? payload.message
-    : isRecord(payload) && typeof payload.error === "string"
-      ? payload.error
-      : fallback;
+// Chosen by status or code: the API replies with codes or English text, never with page copy.
+function errorFrom(status: number, payload: unknown, fallback: string) {
+  if (isAccountSuspended(payload)) {
+    return new AccountSuspendedError(
+      "Sua conta está suspensa, por isso não é possível enviar respostas do quiz.",
+    );
+  }
+
+  if (status === 401) {
+    return new Error("Sua sessão expirou. Entre de novo para continuar.");
+  }
+
+  return new Error(fallback);
 }
 
 function questionsFrom(payload: unknown): QuizQuestion[] {
