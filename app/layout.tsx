@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Bricolage_Grotesque, Lexend } from "next/font/google";
-import Script from "next/script";
+import { Footer } from "@/components/Footer";
+import { Header } from "@/components/Header";
 import { SessionProvider } from "@/components/SessionProvider";
 import "./globals.css";
 
@@ -16,7 +17,7 @@ const bricolage = Bricolage_Grotesque({
 });
 
 export const metadata: Metadata = {
-  title: "ODS Quiz",
+  title: { default: "ODS Quiz", template: "%s | ODS Quiz" },
   description:
     "Descubra como a sua comunidade se relaciona com os 17 Objetivos de Desenvolvimento Sustentável da ONU e encontre iniciativas locais que já fazem a diferença.",
 };
@@ -59,14 +60,14 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
-        <Script
-          id="theme-script"
-          strategy="beforeInteractive"
-          dangerouslySetInnerHTML={{ __html: themeScript }}
-        />
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className="min-h-full flex flex-col">
-        <SessionProvider>{children}</SessionProvider>
+        <SessionProvider>
+          <Header />
+          {children}
+          <Footer />
+        </SessionProvider>
       </body>
     </html>
   );

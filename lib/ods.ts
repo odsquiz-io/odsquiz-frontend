@@ -145,6 +145,6 @@ export const odsGoals: OdsGoal[] = [
   },
 ];
 
-export const odsNames: Record<number, string> = Object.fromEntries(
-  odsGoals.map((goal) => [goal.number, goal.name]),
-);
+export function findGoal(number?: number) {
+  return odsGoals.find((goal) => goal.number === number);
+}

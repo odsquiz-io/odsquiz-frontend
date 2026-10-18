@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { OdsBand } from "@/components/OdsBand";
-import { SectionHeader } from "./SectionHeader";
-import { primaryButton, stagger } from "./styles";
+import { SectionHeader } from "@/components/SectionHeader";
+import { primaryButton, stagger, surface } from "@/components/styles";
 
 const paths = [
   {
@@ -32,7 +32,7 @@ export function Participate() {
           {paths.map((path, index) => (
             <li
               key={path.href}
-              className="build flex flex-col overflow-hidden rounded-lg border border-[var(--color-header-border)] bg-[var(--color-header-background)]"
+              className={`build flex flex-col overflow-hidden ${surface}`}
               style={stagger(index)}
             >
               <OdsBand className="draw h-1.5" />

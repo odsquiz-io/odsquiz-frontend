@@ -11,6 +11,8 @@
   --color-theme-toggle-background: #1d2024;
   --color-theme-toggle-hover: #262a2f;
   --color-focus-ring: #26bde2;
+  --color-error: #df634c;
+  --color-success: #5b9a61;
   --filter-header-logo: brightness(0) invert(1);
 
   --size-header-offset: 1rem;
@@ -41,6 +43,8 @@
   --color-theme-toggle-background: #ece7dc;
   --color-theme-toggle-hover: #e2dccf;
   --color-focus-ring: #00689d;
+  --color-error: #a93221;
+  --color-success: #2a6c38;
   --filter-header-logo: none;
 }
 
@@ -57,6 +61,8 @@
   --color-theme-toggle-background: #1d2024;
   --color-theme-toggle-hover: #262a2f;
   --color-focus-ring: #26bde2;
+  --color-error: #df634c;
+  --color-success: #5b9a61;
   --filter-header-logo: brightness(0) invert(1);
 }
 
@@ -79,6 +85,8 @@
     --color-theme-toggle-background: #ece7dc;
     --color-theme-toggle-hover: #e2dccf;
     --color-focus-ring: #00689d;
+    --color-error: #a93221;
+    --color-success: #2a6c38;
     --filter-header-logo: none;
   }
 }

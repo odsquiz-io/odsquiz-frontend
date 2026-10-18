@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { OdsBand } from "./OdsBand";
+import { focusRing } from "./styles";
 
-const linkClassName =
-  "underline-offset-4 transition hover:text-[var(--color-link-hover)] hover:underline";
+const linkClassName = `rounded-sm underline-offset-4 transition hover:text-[var(--color-link-hover)] hover:underline ${focusRing}`;
 
 export function Footer() {
   return (

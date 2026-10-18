@@ -1,6 +1,6 @@
 import { OdsBand } from "@/components/OdsBand";
-import { SectionHeader } from "./SectionHeader";
-import { stagger } from "./styles";
+import { SectionHeader } from "@/components/SectionHeader";
+import { stagger } from "@/components/styles";
 
 const DAY = 86_400_000;
 const adoption = Date.UTC(2015, 8, 25);

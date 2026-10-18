@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { CSSProperties } from "react";
 import { OdsBand } from "@/components/OdsBand";
 import { odsGoals } from "@/lib/ods";
-import { eyebrow, primaryButton, secondaryButton } from "./styles";
+import { eyebrow, primaryButton, secondaryButton } from "@/components/styles";
 
 const skyline = [62, 80, 52, 92, 70, 58, 100, 74, 86, 48, 95, 66, 82, 56, 90, 68, 97];
 const sink = [62, 30, 74, 44, 82, 38, 22, 66, 48, 86, 34, 58, 18, 76, 52, 90, 40];
