@@ -2,9 +2,18 @@ import dynamic from "next/dynamic";
 import type { ChangeEvent, ReactNode, SyntheticEvent } from "react";
 import { useState } from "react";
 import { OdsBand } from "@/components/OdsBand";
-import { focusRing, primaryButton, secondaryButton, surface } from "@/components/styles";
+import {
+  control,
+  controlBorder,
+  focusRing,
+  primaryButton,
+  secondaryButton,
+  selectChevron,
+  surface,
+} from "@/components/styles";
 import { findGoal } from "@/lib/ods";
-import { createInitiative, geocodeAddress, lookupAddressByCep } from "./api";
+import { geocodeAddress } from "@/lib/cep";
+import { createInitiative, lookupAddressByCep } from "./api";
 import { MapFrame, MapLoading } from "./MapFrame";
 import type {
   CepLookupStatus,
@@ -321,7 +330,7 @@ export function InitiativeForm({
     if (field.kind === "select") {
       return (
         <div className={`relative ${field.width ?? ""}`}>
-          <select {...sharedProps} className={`${controlClass(error)} appearance-none pr-12`}>
+          <select {...sharedProps} className={`${control} ${controlBorder(error)} appearance-none pr-12`}>
             <option value="" disabled>
               Selecione
             </option>
@@ -331,7 +340,7 @@ export function InitiativeForm({
           </select>
           <span
             aria-hidden="true"
-            className="pointer-events-none absolute right-5 top-1/2 size-2 -translate-y-3/4 rotate-45 border-b-2 border-r-2 border-current"
+            className={selectChevron}
           />
         </div>
       );
@@ -342,7 +351,7 @@ export function InitiativeForm({
         <textarea
           {...sharedProps}
           autoComplete={field.autoComplete}
-          className={`${controlClass(error)} min-h-28 py-3`}
+          className={`${control} ${controlBorder(error)} min-h-28 py-3`}
         />
       );
     }
@@ -356,7 +365,7 @@ export function InitiativeForm({
         min={field.min}
         step={field.type === "number" ? "1" : undefined}
         type={field.type ?? "text"}
-        className={`${controlClass(error)} ${field.width ?? ""}`}
+        className={`${control} ${controlBorder(error)} ${field.width ?? ""}`}
       />
     );
 
@@ -484,12 +493,4 @@ function Field({
       ) : null}
     </div>
   );
-}
-
-function controlClass(hasError: boolean) {
-  return `min-h-12 w-full rounded-md border bg-[var(--color-app-background)] px-4 text-base text-[var(--color-app-foreground)] transition ${focusRing} ${
-    hasError
-      ? "border-[var(--color-error)]"
-      : "border-[var(--color-muted)] hover:border-[var(--color-app-foreground)]"
-  }`;
 }

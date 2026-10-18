@@ -1,3 +1,4 @@
+import { formatCep } from "@/lib/cep";
 import type { Initiative } from "./types";
 
 type Fact = {
@@ -22,7 +23,7 @@ export function initiativeFacts(initiative: Initiative) {
     { label: "Tipo", value: type },
     { label: "Área de atuação", value: acting_area },
     { label: "Endereço", value: address, wide: true },
-    { label: "CEP", value: cep?.replace(/^(\d{5})(\d{3})$/, "$1-$2") },
+    { label: "CEP", value: formatCep(cep) },
     {
       label: "Pessoas atendidas",
       stat: true,
