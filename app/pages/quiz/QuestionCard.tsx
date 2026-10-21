@@ -18,7 +18,7 @@ export function QuestionCard({
   return (
     <li
       id={`pergunta-${question.number}`}
-      className={`grid scroll-mt-8 grid-cols-[3rem_minmax(0,1fr)] items-center gap-x-4 gap-y-5 p-5 sm:grid-cols-[5rem_minmax(0,1fr)] sm:gap-x-6 sm:p-8 ${surface}`}
+      className={`grid grid-cols-[3rem_minmax(0,1fr)] items-center gap-x-4 gap-y-5 p-5 sm:grid-cols-[5rem_minmax(0,1fr)] sm:gap-x-6 sm:p-8 ${surface}`}
       style={goalColors(goal)}
     >
       <span

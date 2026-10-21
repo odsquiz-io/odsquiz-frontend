@@ -118,7 +118,7 @@ export default function Initiatives() {
             <section
               id="new-initiative"
               aria-labelledby="new-initiative-title"
-              className="pt-24"
+              className="mt-24"
             >
               <SectionHeader
                 id="new-initiative-title"
