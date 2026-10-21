@@ -1,7 +1,9 @@
-import type { LatLngTuple } from "leaflet";
-import { useEffect, useMemo } from "react";
+import { latLng, latLngBounds, type LatLngTuple } from "leaflet";
+import { useEffect, useMemo, useState } from "react";
 import { Marker, Popup, useMap } from "react-leaflet";
 import MarkerClusterGroup from "react-leaflet-cluster";
+import { useSession } from "@/components/SessionProvider";
+import { geocodeAddress } from "@/lib/cep";
 import { findGoal } from "@/lib/ods";
 import { InitiativeLinks } from "../InitiativeLinks";
 import type { Coordinates, Initiative } from "../types";
@@ -11,14 +13,19 @@ import "react-leaflet-cluster/dist/assets/MarkerCluster.Default.css";
 
 type LocatedInitiative = Initiative & Coordinates;
 
+// undefined while the user's place is still being resolved, null when it is unknown.
+type Home = LatLngTuple | null | undefined;
+
 const brazilCenter: LatLngTuple = [-14.235, -51.9253];
+const regionRadius = 20_000;
 
 export function InitiativesMap({ initiatives }: { initiatives: Initiative[] }) {
   const located = useMemo(() => initiatives.filter(isLocated), [initiatives]);
+  const home = useHome();
 
   return (
     <BaseMap center={brazilCenter} zoom={4}>
-      <FitBounds initiatives={located} />
+      <FitBounds home={home} initiatives={located} />
       <MarkerClusterGroup>
         {located.map((initiative) => {
           const goal = findGoal(initiative.main_ods);
@@ -47,17 +54,70 @@ export function InitiativesMap({ initiatives }: { initiatives: Initiative[] }) {
   );
 }
 
-function FitBounds({ initiatives }: { initiatives: LocatedInitiative[] }) {
+function useHome(): Home {
+  const { status, user } = useSession();
+  const lat = user?.lat ?? 0;
+  const lon = user?.lon ?? 0;
+  // A CEP lookup without coordinates is saved as 0, 0.
+  const saved = useMemo<LatLngTuple | null>(
+    () => (lat !== 0 || lon !== 0 ? [lat, lon] : null),
+    [lat, lon],
+  );
+  const query = !saved && user?.city && user.state ? `${user.city}, ${user.state}, Brasil` : null;
+  const [geocoded, setGeocoded] = useState<{ query: string; home: LatLngTuple | null }>();
+
+  useEffect(() => {
+    if (!query) {
+      return;
+    }
+
+    let isCurrent = true;
+
+    geocodeAddress(query)
+      .catch(() => undefined)
+      .then((coordinates) => {
+        if (isCurrent) {
+          setGeocoded({ query, home: coordinates ? [coordinates.lat, coordinates.lon] : null });
+        }
+      });
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [query]);
+
+  if (status === "loading") {
+    return undefined;
+  }
+
+  if (saved || !query) {
+    return saved;
+  }
+
+  return geocoded?.query === query ? geocoded.home : undefined;
+}
+
+function FitBounds({ home, initiatives }: { home: Home; initiatives: LocatedInitiative[] }) {
   const map = useMap();
 
   useEffect(() => {
-    if (initiatives.length > 0) {
-      map.fitBounds(
-        initiatives.map(({ lat, lon }): LatLngTuple => [lat, lon]),
-        { maxZoom: 15, padding: [32, 32] },
-      );
+    const points = initiatives.map(({ lat, lon }) => latLng(lat, lon));
+
+    if (home) {
+      const origin = latLng(home);
+      const [nearest] = points.sort((a, b) => origin.distanceTo(a) - origin.distanceTo(b));
+
+      if (!nearest) {
+        map.setView(origin, 12);
+      } else if (origin.distanceTo(nearest) <= regionRadius) {
+        map.setView(nearest, 14);
+      } else {
+        map.fitBounds(latLngBounds([origin, nearest]), { padding: [32, 32] });
+      }
+    } else if (home === null && points.length > 0) {
+      map.fitBounds(latLngBounds(points), { maxZoom: 15, padding: [32, 32] });
     }
-  }, [initiatives, map]);
+  }, [home, initiatives, map]);
 
   return null;
 }
