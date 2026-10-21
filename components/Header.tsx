@@ -62,7 +62,7 @@ export function Header() {
   const closeMenu = () => setMenuPathname(null);
 
   return (
-    <header className="absolute inset-x-0 top-0 z-20 w-full px-[var(--size-header-padding-x)] pt-[var(--size-header-offset)]">
+    <header className="fixed inset-x-[var(--size-header-padding-x)] top-[var(--size-header-offset)] z-20 mx-auto max-w-[var(--size-header-nav-max-width)]">
       <nav
         aria-label="Principal"
         onKeyDown={(event) => {
@@ -71,11 +71,11 @@ export function Header() {
             menuButton.current?.focus();
           }
         }}
-        className="relative mx-auto max-w-[var(--size-header-nav-max-width)] overflow-hidden rounded-[var(--size-header-nav-radius)] border border-[var(--color-header-border)] bg-[var(--color-header-background)] px-[var(--size-header-nav-padding-x)] text-[var(--color-app-foreground)]"
+        className="relative flex max-h-[calc(100dvh-2*var(--size-header-offset))] flex-col overflow-hidden rounded-[var(--size-header-nav-radius)] border border-[var(--color-header-border)] bg-[var(--color-header-background)] px-[var(--size-header-nav-padding-x)] text-[var(--color-app-foreground)]"
       >
         <OdsBand className="absolute inset-x-0 top-0 h-1" />
 
-        <div className="flex min-h-[var(--size-header-nav-height)] items-center justify-between gap-3 md:grid md:grid-cols-[1fr_auto_1fr] md:gap-6">
+        <div className="flex min-h-[var(--size-header-nav-height)] shrink-0 items-center justify-between gap-3 md:grid md:grid-cols-[1fr_auto_1fr] md:gap-6">
           <Link
             href="/"
             aria-label="ODS Quiz, página inicial"
@@ -136,12 +136,13 @@ export function Header() {
           </div>
         </div>
 
+        {/* The extra padding keeps focus rings inside the scroll area. */}
         <div
           id="mobile-navigation"
           hidden={!isMenuOpen}
-          className="border-t border-[var(--color-header-border)] pb-4 md:hidden"
+          className="-mx-1 -mt-1 overflow-x-hidden overflow-y-auto overscroll-contain px-1 pt-1 pb-4 md:hidden"
         >
-          <ul>
+          <ul className="border-t border-[var(--color-header-border)]">
             {navItems.map((item, index) => {
               const current = isCurrent(pathname, item.href);
 

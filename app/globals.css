@@ -255,6 +255,12 @@ body {
     color 180ms ease;
 }
 
+html:has(> body > header) {
+  scroll-padding-top: calc(
+    var(--size-header-offset) * 2 + var(--size-header-nav-height)
+  );
+}
+
 @media (max-width: 767px) {
   :root {
     --size-header-offset: 0.75rem;
@@ -264,5 +270,9 @@ body {
     --size-header-logo-width: 5.25rem;
     --size-header-logo-height: 2.625rem;
     --size-header-link-text: 0.9375rem;
+  }
+
+  body:has(#mobile-navigation:not([hidden])) {
+    overflow: hidden;
   }
 }
