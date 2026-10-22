@@ -40,7 +40,7 @@ export function DataTable<T>({
               <th
                 key={column.key}
                 scope="col"
-                className={`h-9 whitespace-nowrap px-3 text-xs font-medium text-[var(--admin-muted)] first:pl-4 last:pr-4 ${alignment(column)} ${column.sticky ? `${stickyEnd} md:bg-[var(--admin-raised)]` : ""}`}
+                className={`h-9 whitespace-nowrap px-3 text-xs font-medium text-[var(--admin-muted)] first:pl-4 last:pr-4 ${alignment(column)} ${column.sticky ? `${stickyEnd} bg-[var(--admin-raised)]` : ""}`}
               >
                 {column.header}
               </th>
@@ -54,7 +54,7 @@ export function DataTable<T>({
               className="border-t border-[var(--admin-border)] bg-[var(--admin-surface)] hover:bg-[var(--admin-raised)]"
             >
               {columns.map((column) => {
-                const className = `px-3 py-2.5 align-top font-normal first:pl-4 last:pr-4 ${alignment(column)} ${column.sticky ? `${stickyEnd} md:bg-inherit` : ""} ${column.className ?? ""}`;
+                const className = `px-3 py-2.5 align-top font-normal first:pl-4 last:pr-4 ${alignment(column)} ${column.sticky ? `${stickyEnd} bg-inherit` : ""} ${column.className ?? ""}`;
 
                 return column.rowHeader ? (
                   <th key={column.key} scope="row" className={className}>
@@ -75,7 +75,7 @@ export function DataTable<T>({
 }
 
 // Keeps the actions in view while the rest of a wide table scrolls.
-const stickyEnd = "md:sticky md:right-0 md:shadow-[-1px_0_0_var(--admin-border)]";
+const stickyEnd = "sticky right-0 shadow-[-1px_0_0_var(--admin-border)]";
 
 function alignment<T>(column: Column<T>) {
   return column.align === "end" ? "text-right" : "text-left";

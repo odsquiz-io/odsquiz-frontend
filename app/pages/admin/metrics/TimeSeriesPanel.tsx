@@ -187,7 +187,7 @@ function SeriesFigure({
               )}
             />
             <Area
-              type="monotone"
+              type="linear"
               dataKey="value"
               name={many}
               stroke="var(--mx-series)"

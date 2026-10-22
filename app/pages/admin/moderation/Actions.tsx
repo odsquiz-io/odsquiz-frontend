@@ -5,11 +5,11 @@ import { type Column, DataTable } from "../ui/DataTable";
 import { FilterBar, SegmentedControl } from "../ui/Filters";
 import { PageHeader } from "../ui/PageHeader";
 import { EmptyState } from "../ui/States";
-import { StatusBadge, type Tone } from "../ui/StatusBadge";
+import type { Tone } from "../ui/StatusBadge";
 import { buttonClass } from "../ui/styles";
 import { readOption, readPage, useQueryParams } from "../ui/useQueryParams";
 import { type AdminAction, listPath } from "./api";
-import { DateTime, Identity, Text } from "./Cells";
+import { DateTime, Identity, Marker, Text } from "./Cells";
 import { PagedList } from "./PagedList";
 import { RefreshButton } from "./RefreshButton";
 import { usePage } from "./usePage";
@@ -45,7 +45,7 @@ const columns: Column<AdminAction>[] = [
     header: "Ação",
     cell: (action) => {
       const known = actionLabels[action.action];
-      return <StatusBadge tone={known?.tone}>{known?.label ?? action.action}</StatusBadge>;
+      return <Marker tone={known?.tone}>{known?.label ?? action.action}</Marker>;
     },
   },
   {

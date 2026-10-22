@@ -3,6 +3,7 @@
 import { type ReactNode, useEffect, useState } from "react";
 import { useAuthToken } from "@/lib/auth";
 import { ConfirmDialog } from "../ui/ConfirmDialog";
+import type { RowMenuItem } from "../ui/RowMenu";
 import { AdminApiError } from "./api";
 import type { PageState } from "./usePage";
 
@@ -37,6 +38,15 @@ export function useModeration<T extends { id: string }, A extends string>(
   function start(item: T, action: A) {
     setNotice("");
     setPending({ item, action });
+  }
+
+  function menuItems(item: T, actions: { action: A; disabledReason?: string }[]): RowMenuItem[] {
+    return actions.map(({ action, disabledReason }) => ({
+      label: moderations[action].title,
+      tone: moderations[action].tone,
+      disabledReason,
+      onSelect: () => start(item, action),
+    }));
   }
 
   async function confirm(item: T, moderation: Moderation<T>, reason: string) {
@@ -75,5 +85,5 @@ export function useModeration<T extends { id: string }, A extends string>(
       </ConfirmDialog>
     ) : null;
 
-  return { dialog, notice, start };
+  return { dialog, menuItems, notice };
 }
