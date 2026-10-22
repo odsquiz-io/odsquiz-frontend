@@ -5,13 +5,13 @@ import { states } from "@/lib/cep";
 import { findGoal, odsGoals } from "@/lib/ods";
 import { type Column, DataTable } from "../ui/DataTable";
 import { FilterBar, SearchInput, SegmentedControl, SelectFilter } from "../ui/Filters";
-import { formatNumber } from "../ui/format";
 import { PageHeader } from "../ui/PageHeader";
+import { RowMenu } from "../ui/RowMenu";
 import { EmptyState, StatusMessage } from "../ui/States";
 import { buttonClass } from "../ui/styles";
 import { readOption, readPage, useQueryParams } from "../ui/useQueryParams";
 import { type AdminInitiative, listPath, reactivateInitiative, suspendInitiative } from "./api";
-import { DateTime, Emphasis, Identity, none, Status, Text } from "./Cells";
+import { DateTime, Emphasis, Identity, none, Status } from "./Cells";
 import { PagedList } from "./PagedList";
 import { RefreshButton } from "./RefreshButton";
 import { type Moderation, useModeration } from "./useModeration";
@@ -80,7 +80,7 @@ export default function Initiatives() {
   const list = usePage<AdminInitiative>(
     listPath("initiatives", { query, status, main_ods: ods, type, state, page }),
   );
-  const { dialog, notice, start } = useModeration(list, moderations);
+  const { dialog, menuItems, notice } = useModeration(list, moderations);
   const filtered = Boolean(query || status || ods || type || state);
   const clearHref = hrefWith({
     query: undefined,
@@ -118,47 +118,30 @@ export default function Initiatives() {
     },
     { key: "ods", header: "ODS principal", cell: (initiative) => <Goal number={initiative.main_ods} /> },
     {
-      key: "type",
-      header: "Tipo",
-      cell: (initiative) => (
-        <Text>{initiative.type}</Text>
-      ),
-    },
-    {
       key: "owner",
       header: "Responsável",
       cell: ({ owner }) => (owner ? <Identity title={owner.name} detail={owner.email} /> : none),
     },
     {
-      key: "impact",
-      header: "Pessoas atendidas",
-      align: "end",
-      cell: (initiative) => formatNumber(initiative.impact),
-    },
-    {
       key: "created",
       header: "Cadastro",
+      className: "text-[var(--admin-muted)]",
       cell: (initiative) => <DateTime value={initiative.created_at} />,
     },
     {
       key: "actions",
-      header: "Ações",
+      header: <span className="sr-only">Ações</span>,
       align: "end",
       sticky: true,
-      cell: (initiative) => {
-        const suspended = Boolean(initiative.suspended_at);
-
-        return (
-          <button
-            type="button"
-            onClick={() => start(initiative, suspended ? "reactivate" : "suspend")}
-            className={buttonClass("secondary", "sm")}
-          >
-            {suspended ? "Reativar" : "Suspender"}
-            <span className="sr-only"> {initiative.name}</span>
-          </button>
-        );
-      },
+      className: "w-px",
+      cell: (initiative) => (
+        <RowMenu
+          label={`Ações para ${initiative.name}`}
+          items={menuItems(initiative, [
+            { action: initiative.suspended_at ? "reactivate" : "suspend" },
+          ])}
+        />
+      ),
     },
   ];
 
@@ -265,7 +248,7 @@ function Goal({ number }: { number: number }) {
   return (
     <span className="flex min-w-36 max-w-40 items-center gap-2" title={goal.name}>
       <span
-        className="grid size-6 shrink-0 place-items-center rounded text-xs font-semibold"
+        className="grid size-5 shrink-0 place-items-center rounded text-xs font-semibold"
         style={{ backgroundColor: goal.color, color: goal.textColor }}
       >
         {goal.number}

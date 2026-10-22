@@ -20,8 +20,8 @@ export function MetricsDashboard() {
   return (
     <div className="metrics flex flex-col gap-5">
       <PageHeader
-        title="Visão geral"
-        description="Cadastros, quizzes e iniciativas do ODS Quiz. Os filtros valem para todo o painel e ficam no endereço da página, prontos para compartilhar."
+        title="Análises"
+        description="Cadastros, quizzes e iniciativas em detalhe. Os filtros valem para toda a página e ficam no endereço, prontos para compartilhar."
       />
 
       <MetricsFilters filters={filters} today={today} onChange={setParams} />

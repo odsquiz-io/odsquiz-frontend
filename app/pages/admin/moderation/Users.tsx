@@ -6,12 +6,12 @@ import { type Column, DataTable } from "../ui/DataTable";
 import { FilterBar, SearchInput, SegmentedControl, SelectFilter } from "../ui/Filters";
 import { formatNumber } from "../ui/format";
 import { PageHeader } from "../ui/PageHeader";
+import { RowMenu } from "../ui/RowMenu";
 import { EmptyState, StatusMessage } from "../ui/States";
-import { StatusBadge } from "../ui/StatusBadge";
 import { buttonClass } from "../ui/styles";
 import { readOption, readPage, useQueryParams } from "../ui/useQueryParams";
 import { type AdminUser, changeUserRole, listPath, reactivateUser, suspendUser } from "./api";
-import { DateTime, Emphasis, Identity, Place, Status } from "./Cells";
+import { DateTime, Emphasis, Identity, Marker, none, Status } from "./Cells";
 import { PagedList } from "./PagedList";
 import { RefreshButton } from "./RefreshButton";
 import { type Moderation, useModeration } from "./useModeration";
@@ -94,7 +94,7 @@ export default function Users() {
   const role = readOption(params, "role", ["user", "admin"]);
   const page = readPage(params);
   const list = usePage<AdminUser>(listPath("users", { query, status, role, page }));
-  const { dialog, notice, start } = useModeration(list, moderations);
+  const { dialog, menuItems, notice } = useModeration(list, moderations);
   const { user: me } = useSession();
   const filtered = Boolean(query || status || role);
   const clearHref = hrefWith({ query: undefined, status: undefined, role: undefined, page: undefined });
@@ -108,52 +108,53 @@ export default function Users() {
         <Identity
           title={user.name || user.email}
           detail={user.email}
-          badge={user.id === me?.id ? <StatusBadge>Você</StatusBadge> : null}
+          badge={
+            user.id === me?.id ? (
+              <span className="shrink-0 text-xs text-[var(--admin-muted)]">(você)</span>
+            ) : null
+          }
         />
       ),
     },
     {
       key: "status",
       header: "Status",
-      cell: (user) => (
-        <Status
-          labels={["Ativo", "Suspenso"]}
-          suspendedAt={user.suspended_at}
-          reason={user.suspension_reason}
-        />
-      ),
-    },
-    {
-      key: "role",
-      header: "Papel",
       cell: (user) =>
-        user.role === "admin" ? (
-          <StatusBadge tone="accent">Administrador</StatusBadge>
+        user.role === "admin" && !user.suspended_at ? (
+          <Marker tone="accent">Administrador</Marker>
         ) : (
-          <span className="text-[var(--admin-muted)]">Usuário</span>
+          <Status
+            labels={["Ativo", "Suspenso"]}
+            suspendedAt={user.suspended_at}
+            reason={user.suspension_reason}
+          />
         ),
     },
-    { key: "place", header: "Local", cell: (user) => <Place city={user.city} state={user.state} /> },
-    { key: "quizzes", header: "Quizzes", align: "end", cell: (user) => formatNumber(user.quizzes) },
     {
-      key: "initiatives",
-      header: "Iniciativas",
-      align: "end",
-      cell: (user) => formatNumber(user.initiatives),
+      key: "activity",
+      header: "Atividade",
+      className: "text-[var(--admin-muted)]",
+      cell: (user) => <Activity quizzes={user.quizzes} initiatives={user.initiatives} />,
     },
-    { key: "created", header: "Cadastro", cell: (user) => <DateTime value={user.created_at} /> },
+    {
+      key: "created",
+      header: "Cadastro",
+      className: "text-[var(--admin-muted)]",
+      cell: (user) => <DateTime value={user.created_at} />,
+    },
     {
       key: "actions",
-      header: "Ações",
+      header: <span className="sr-only">Ações</span>,
       align: "end",
       sticky: true,
-      cell: (user) => (
-        <UserActions
-          user={user}
-          self={user.id === me?.id}
-          onAction={(action) => start(user, action)}
-        />
-      ),
+      className: "w-px",
+      cell: (user) =>
+        user.id === me?.id ? null : (
+          <RowMenu
+            label={`Ações para ${user.name || user.email}`}
+            items={menuItems(user, userActions(user))}
+          />
+        ),
     },
   ];
 
@@ -233,53 +234,33 @@ export default function Users() {
   );
 }
 
-function UserActions({
-  onAction,
-  self,
-  user,
-}: {
-  onAction: (action: UserAction) => void;
-  self: boolean;
-  user: AdminUser;
-}) {
+function userActions(user: AdminUser): { action: UserAction; disabledReason?: string }[] {
   const suspended = Boolean(user.suspended_at);
   const admin = user.role === "admin";
-  const selfHint = "Você não pode alterar a sua própria conta.";
 
-  return (
-    <div className="flex justify-end gap-1.5">
-      <button
-        type="button"
-        disabled={self || (admin && !suspended)}
-        title={
-          self
-            ? selfHint
-            : admin && !suspended
-              ? "Remova o acesso de administrador antes de suspender."
-              : undefined
-        }
-        onClick={() => onAction(suspended ? "reactivate" : "suspend")}
-        className={buttonClass("secondary", "sm")}
-      >
-        {suspended ? "Reativar" : "Suspender"}
-        <span className="sr-only"> {user.name}</span>
-      </button>
-      <button
-        type="button"
-        disabled={self || (!admin && suspended)}
-        title={
-          self
-            ? selfHint
-            : !admin && suspended
-              ? "Reative a conta antes de dar acesso de administrador."
-              : undefined
-        }
-        onClick={() => onAction(admin ? "demote" : "promote")}
-        className={buttonClass("secondary", "sm")}
-      >
-        {admin ? "Remover admin" : "Tornar admin"}
-        <span className="sr-only"> {user.name}</span>
-      </button>
-    </div>
-  );
+  return [
+    {
+      action: suspended ? "reactivate" : "suspend",
+      disabledReason:
+        admin && !suspended ? "Remova o acesso de administrador antes de suspender." : undefined,
+    },
+    {
+      action: admin ? "demote" : "promote",
+      disabledReason:
+        !admin && suspended ? "Reative a conta antes de dar acesso de administrador." : undefined,
+    },
+  ];
+}
+
+function Activity({ initiatives, quizzes }: { initiatives: number; quizzes: number }) {
+  const parts = [
+    count(quizzes, "quiz", "quizzes"),
+    count(initiatives, "iniciativa", "iniciativas"),
+  ].filter(Boolean);
+
+  return parts.length ? <span className="whitespace-nowrap">{parts.join(" · ")}</span> : none;
+}
+
+function count(value: number, one: string, many: string) {
+  return value ? `${formatNumber(value)} ${value === 1 ? one : many}` : "";
 }

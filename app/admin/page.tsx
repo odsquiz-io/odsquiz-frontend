@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { MetricsDashboard } from "@/app/pages/admin/metrics/MetricsDashboard";
+import { Overview } from "@/app/pages/admin/overview/Overview";
 
 export const metadata: Metadata = { title: "Visão geral" };
 
 export default function Page() {
-  return <MetricsDashboard />;
+  return <Overview />;
 }
