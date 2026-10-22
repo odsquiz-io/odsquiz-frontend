@@ -14,7 +14,9 @@ import { formatNumber } from "./initiatives/format";
 import { Feedback } from "./initiatives/InitiativesList";
 import { AccountDetails } from "./profile/AccountDetails";
 import { InitiativeGrid } from "./profile/InitiativeGrid";
+import { Invitations, Memberships } from "./profile/Participation";
 import { QuizHistory } from "./profile/QuizHistory";
+import { useParticipation } from "./profile/useParticipation";
 import { fetchQuizSubmissions } from "./quiz/api";
 
 type Loaded<T> = { token: string; data?: T; error?: string };
@@ -66,10 +68,12 @@ export default function Profile() {
   const { status, user } = useSession();
   const quizzes = useTokenData(token, fetchQuizSubmissions);
   const initiatives = useTokenData(token, fetchMyInitiatives);
+  const { participation, accepted, declined, left } = useParticipation(token);
   // Tied to the token, like the loaded data, so a sign-in in another tab never reopens the editor.
   const [editingToken, setEditingToken] = useState<string | null>();
   const editing = Boolean(token) && editingToken === token;
-  const ready = Boolean(token && quizzes && initiatives) && status !== "loading";
+  const ready =
+    Boolean(token && quizzes && initiatives && participation) && status !== "loading";
 
   function setEditing(open: boolean) {
     setEditingToken(open ? token : null);
@@ -113,6 +117,15 @@ export default function Profile() {
           />
         ) : ready ? (
           <>
+            {token && participation?.hadInvitations ? (
+              <Invitations
+                invitations={participation.invitations}
+                token={token}
+                onAccepted={accepted}
+                onDeclined={declined}
+              />
+            ) : null}
+
             <section aria-labelledby="quizzes-title" className="pt-24">
               <SectionHeader
                 animated={false}
@@ -149,6 +162,17 @@ export default function Profile() {
                 <LoadError error={initiatives?.error} />
               )}
             </section>
+
+            {token && participation ? (
+              <Memberships
+                error={
+                  participation.error ? <LoadError error={participation.error} /> : undefined
+                }
+                memberships={participation.memberships}
+                token={token}
+                onLeft={left}
+              />
+            ) : null}
 
             <section aria-labelledby="account-title" className="pt-24">
               <h2 id="account-title" className={eyebrow}>

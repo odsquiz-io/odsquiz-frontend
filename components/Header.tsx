@@ -22,6 +22,7 @@ const navItems = [
   { label: "Início", href: "/" },
   { label: "Quiz", href: "/quiz" },
   { label: "Iniciativas", href: "/initiatives" },
+  { label: "Atividades", href: "/feed" },
 ];
 
 const iconButton = `grid size-10 shrink-0 place-items-center rounded-[var(--size-theme-toggle-radius)] border border-[var(--color-header-border)] bg-[var(--color-theme-toggle-background)] transition hover:border-[var(--color-link-hover)] hover:bg-[var(--color-theme-toggle-hover)] ${focusRing}`;
@@ -85,7 +86,7 @@ export function Header() {
             <Logo />
           </Link>
 
-          <ul className="hidden items-center gap-[var(--size-header-link-gap)] md:flex">
+          <ul className="hidden items-center gap-5 md:flex lg:gap-[var(--size-header-link-gap)]">
             {navItems.map((item) => (
               <li key={item.href}>
                 <Link
@@ -226,7 +227,7 @@ function AuthArea({
     <div className="flex items-center justify-between gap-2">
       <span
         title={user.name}
-        className="min-w-0 truncate text-[length:var(--size-header-link-text)] font-semibold md:max-w-[8rem] lg:max-w-[12rem]"
+        className="min-w-0 truncate text-[length:var(--size-header-link-text)] font-semibold md:max-lg:hidden lg:max-w-[11rem]"
       >
         Olá, {user.name}!
       </span>

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { focusRing } from "@/components/styles";
-import { InitiativeCard } from "../initiatives/InitiativesList";
+import { cardLink, InitiativeCard } from "../initiatives/InitiativesList";
 import type { Initiative } from "../initiatives/types";
 
 export function InitiativeGrid({ initiatives }: { initiatives: Initiative[] }) {
@@ -8,7 +8,21 @@ export function InitiativeGrid({ initiatives }: { initiatives: Initiative[] }) {
     <ul className="mt-12 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       {initiatives.map((initiative, index) => (
         <li key={initiative.id ?? `${initiative.name}-${index}`}>
-          <InitiativeCard initiative={initiative} />
+          <InitiativeCard
+            initiative={initiative}
+            links={
+              initiative.id ? (
+                <Link
+                  href={`/initiatives/${initiative.id}/manage`}
+                  className={`mt-3 inline-block ${cardLink}`}
+                >
+                  Gerenciar iniciativa
+                  <span className="sr-only"> {initiative.name}</span>
+                  <span aria-hidden="true"> →</span>
+                </Link>
+              ) : null
+            }
+          />
         </li>
       ))}
       <li>

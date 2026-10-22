@@ -24,6 +24,8 @@ export const selectChevron =
 
 export const primaryButton = `inline-flex min-h-12 items-center justify-center rounded-md bg-[var(--color-app-foreground)] px-6 text-base font-bold text-[var(--color-app-background)] transition hover:opacity-85 ${focusRing}`;
 
+export const dangerButton = `inline-flex min-h-12 items-center justify-center rounded-md bg-[var(--color-error)] px-6 text-base font-bold text-[var(--color-app-background)] transition hover:opacity-85 ${focusRing}`;
+
 export const secondaryButton = `inline-flex min-h-12 items-center justify-center rounded-md border-2 border-[var(--color-app-foreground)] px-6 text-base font-bold transition hover:bg-[var(--color-app-foreground)] hover:text-[var(--color-app-background)] ${focusRing}`;
 
 export const stagger = (index: number) => ({ "--i": index }) as CSSProperties;

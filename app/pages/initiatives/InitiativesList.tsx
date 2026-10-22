@@ -15,7 +15,7 @@ type InitiativesListProps = {
   status: ListStatus;
 };
 
-const cardLink = `font-bold underline-offset-4 transition hover:text-[var(--color-link-hover)] hover:underline ${focusRing}`;
+export const cardLink = `font-bold underline-offset-4 transition hover:text-[var(--color-link-hover)] hover:underline ${focusRing}`;
 
 export function InitiativesList({
   initiatives,
@@ -101,7 +101,13 @@ function ListFeedback({
   return null;
 }
 
-export function InitiativeCard({ initiative }: { initiative: Initiative }) {
+export function InitiativeCard({
+  initiative,
+  links,
+}: {
+  initiative: Initiative;
+  links?: ReactNode;
+}) {
   const goal = findGoal(initiative.main_ods);
 
   return (
@@ -140,7 +146,7 @@ export function InitiativeCard({ initiative }: { initiative: Initiative }) {
       </dl>
 
       <div className="mt-auto px-5 pb-5 pt-3">
-        <InitiativeLinks id={initiative.id} className={cardLink} />
+        {links ?? <InitiativeLinks id={initiative.id} className={cardLink} />}
       </div>
     </article>
   );

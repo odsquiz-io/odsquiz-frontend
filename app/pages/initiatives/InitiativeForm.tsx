@@ -1,6 +1,7 @@
 import dynamic from "next/dynamic";
 import type { ChangeEvent, ReactNode, SyntheticEvent } from "react";
 import { useState } from "react";
+import { flushSync } from "react-dom";
 import { OdsBand } from "@/components/OdsBand";
 import { AccountSuspendedError, useSession } from "@/components/SessionProvider";
 import {
@@ -14,18 +15,24 @@ import {
 } from "@/components/styles";
 import { findGoal } from "@/lib/ods";
 import { geocodeAddress } from "@/lib/cep";
-import { createInitiative, lookupAddressByCep } from "./api";
+import { createInitiative, lookupAddressByCep, updateInitiative } from "./api";
 import { MapFrame, MapLoading } from "./MapFrame";
 import type {
   CepLookupStatus,
   Coordinates,
+  Initiative,
   InitiativeFieldErrors,
   InitiativeFormField,
   InitiativeFormState,
   Place,
   SubmitStatus,
 } from "./types";
-import { initialFormState, validateInitiativeForm } from "./validation";
+import {
+  DESCRIPTION_MAX_LENGTH,
+  initialFormState,
+  textLength,
+  validateInitiativeForm,
+} from "./validation";
 
 const LocationMap = dynamic(
   () => import("./map/LocationMap").then((mod) => mod.LocationMap),
@@ -41,6 +48,7 @@ type FieldConfig = {
   label: string;
   max?: number;
   min?: number;
+  optional?: boolean;
   options?: string[];
   type?: "email" | "number" | "text";
   width?: string;
@@ -102,6 +110,14 @@ const aboutFields: FieldConfig[] = [
   },
 ];
 
+const descriptionField: FieldConfig = {
+  field: "description",
+  hint: "Conte o que a iniciativa faz, para quem e como participar. Aparece na página pública, com até 2.000 caracteres.",
+  kind: "textarea",
+  label: "Sobre",
+  optional: true,
+};
+
 const locationFields: FieldConfig[] = [
   {
     autoComplete: "postal-code",
@@ -131,17 +147,48 @@ const contactFields: FieldConfig[] = [
   },
 ];
 
+function formStateFrom(initiative: Initiative): InitiativeFormState {
+  return {
+    name: initiative.name ?? "",
+    address: initiative.address ?? "",
+    cep: initiative.cep ?? "",
+    emailOwner: initiative.email_owner ?? "",
+    actingArea: initiative.acting_area ?? "",
+    impact: initiative.impact === undefined ? "" : String(initiative.impact),
+    type: initiative.type ?? "",
+    mainODS: initiative.main_ods ? String(initiative.main_ods) : "",
+    description: initiative.description ?? "",
+  };
+}
+
+function coordinatesFrom({ lat, lon }: Initiative) {
+  return lat && lon ? { lat, lon } : null;
+}
+
+function placeFrom({ city, state }: Initiative) {
+  return city && state ? { city, state } : null;
+}
+
+// Without an initiative it creates one; with it, it edits that initiative.
 export function InitiativeForm({
-  onCreated,
+  initiative,
+  onSaved,
   token,
 }: {
-  onCreated: () => void;
+  initiative?: Initiative;
+  onSaved: (initiative?: Initiative) => void;
   token: string;
 }) {
   const { signOutSuspended } = useSession();
-  const [form, setForm] = useState<InitiativeFormState>(initialFormState);
-  const [coordinates, setCoordinates] = useState<Coordinates | null>(null);
-  const [place, setPlace] = useState<Place | null>(null);
+  const [form, setForm] = useState<InitiativeFormState>(() =>
+    initiative ? formStateFrom(initiative) : initialFormState,
+  );
+  const [coordinates, setCoordinates] = useState<Coordinates | null>(() =>
+    initiative ? coordinatesFrom(initiative) : null,
+  );
+  const [place, setPlace] = useState<Place | null>(() =>
+    initiative ? placeFrom(initiative) : null,
+  );
   const [fieldErrors, setFieldErrors] = useState<InitiativeFieldErrors>({});
   const [status, setStatus] = useState<SubmitStatus>("idle");
   const [cepLookupStatus, setCepLookupStatus] =
@@ -151,6 +198,7 @@ export function InitiativeForm({
 
   function updateField(field: InitiativeFormField, value: string) {
     setForm((currentForm) => ({ ...currentForm, [field]: value }));
+    setMessage("");
 
     if (field === "cep") {
       setCoordinates(null);
@@ -217,15 +265,21 @@ export function InitiativeForm({
     event.preventDefault();
     setMessage("");
 
+    const formElement = event.currentTarget;
     const validationErrors = validateInitiativeForm(form);
 
+    if (!coordinates || !place) {
+      validationErrors.cep ??= "Busque o CEP para marcar a iniciativa no mapa.";
+    }
+
     if (Object.keys(validationErrors).length > 0) {
-      setFieldErrors(validationErrors);
+      // Commits the errors first so the focused field already announces its message.
+      flushSync(() => setFieldErrors(validationErrors));
+      formElement.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
       return;
     }
 
     if (!coordinates || !place) {
-      setFieldErrors({ cep: "Busque o CEP para marcar a iniciativa no mapa." });
       return;
     }
 
@@ -233,6 +287,20 @@ export function InitiativeForm({
     setFieldErrors({});
 
     try {
+      if (initiative?.id) {
+        const updated = await updateInitiative(
+          initiative.id,
+          form,
+          coordinates,
+          place,
+          token,
+        );
+        setStatus("success");
+        setMessage("Alterações salvas.");
+        onSaved(updated);
+        return;
+      }
+
       await createInitiative(form, coordinates, place, token);
       setStatus("success");
       setForm(initialFormState);
@@ -241,7 +309,7 @@ export function InitiativeForm({
       setCepLookupStatus("idle");
       setGeoMessage("");
       setMessage("Iniciativa cadastrada com sucesso.");
-      onCreated();
+      onSaved();
     } catch (error) {
       if (error instanceof AccountSuspendedError) {
         signOutSuspended();
@@ -268,6 +336,7 @@ export function InitiativeForm({
       <div className="divide-y divide-[var(--color-header-border)] px-6 sm:px-8">
         <FieldGroup legend="Sobre a iniciativa" number={1}>
           {aboutFields.map(renderField)}
+          {initiative ? renderField(descriptionField) : null}
         </FieldGroup>
 
         <FieldGroup legend="Localização" number={2}>
@@ -303,7 +372,11 @@ export function InitiativeForm({
             disabled={status === "submitting"}
             className={`w-full sm:w-auto ${primaryButton} disabled:cursor-not-allowed disabled:opacity-60`}
           >
-            {status === "submitting" ? "Salvando..." : "Cadastrar iniciativa"}
+            {status === "submitting"
+              ? "Salvando..."
+              : initiative
+                ? "Salvar alterações"
+                : "Cadastrar iniciativa"}
           </button>
         </div>
       </div>
@@ -320,6 +393,7 @@ export function InitiativeForm({
         hint={field.hint}
         id={id}
         label={field.label}
+        optional={field.optional}
       >
         {renderControl(field, id)}
       </Field>
@@ -330,7 +404,7 @@ export function InitiativeForm({
     const error = Boolean(fieldErrors[field.field]);
     const sharedProps = {
       id,
-      required: true,
+      required: !field.optional,
       value: form[field.field],
       "aria-invalid": error,
       "aria-describedby": error ? `${id}-hint ${id}-error` : `${id}-hint`,
@@ -346,7 +420,7 @@ export function InitiativeForm({
             <option value="" disabled>
               Selecione
             </option>
-            {field.options?.map((option) => (
+            {selectOptions(field.options ?? [], form[field.field]).map((option) => (
               <option key={option}>{option}</option>
             ))}
           </select>
@@ -355,6 +429,30 @@ export function InitiativeForm({
             className={selectChevron}
           />
         </div>
+      );
+    }
+
+    if (field.field === "description") {
+      const length = textLength(form.description);
+
+      return (
+        <>
+          <textarea
+            {...sharedProps}
+            rows={6}
+            className={`${control} ${controlBorder(error)} min-h-40 py-3`}
+          />
+          <p
+            aria-hidden="true"
+            className={`mt-2 text-right text-sm tabular-nums ${
+              length > DESCRIPTION_MAX_LENGTH
+                ? "font-bold text-[var(--color-error)]"
+                : "text-[var(--color-muted)]"
+            }`}
+          >
+            {length}/{DESCRIPTION_MAX_LENGTH}
+          </p>
+        </>
       );
     }
 
@@ -443,6 +541,11 @@ export function InitiativeForm({
   }
 }
 
+// Keeps a value saved before the options changed selectable instead of blanking the select.
+function selectOptions(options: string[], value: string) {
+  return !value || options.includes(value) ? options : [value, ...options];
+}
+
 function FieldGroup({
   children,
   legend,
@@ -478,21 +581,27 @@ function Field({
   hint,
   id,
   label,
+  optional = false,
 }: {
   children: ReactNode;
   error?: string;
   hint: ReactNode;
   id: string;
   label: string;
+  optional?: boolean;
 }) {
   return (
     <div>
       <label htmlFor={id} className="block font-bold">
         {label}
-        <span aria-hidden="true" className="text-[var(--color-muted)]">
-          {" "}
-          *
-        </span>
+        {optional ? (
+          <span className="font-normal text-[var(--color-muted)]"> (opcional)</span>
+        ) : (
+          <span aria-hidden="true" className="text-[var(--color-muted)]">
+            {" "}
+            *
+          </span>
+        )}
       </label>
       <p id={`${id}-hint`} className="mt-1 text-sm leading-relaxed text-[var(--color-muted)]">
         {hint}

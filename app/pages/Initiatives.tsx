@@ -130,7 +130,7 @@ export default function Initiatives() {
                 os campos são obrigatórios.
               </SectionHeader>
               <div className="mt-12 max-w-3xl">
-                <InitiativeForm token={token} onCreated={reloadInitiatives} />
+                <InitiativeForm token={token} onSaved={reloadInitiatives} />
               </div>
             </section>
           </>

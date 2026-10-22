@@ -3,6 +3,13 @@ import type {
   InitiativeFormState,
 } from "./types";
 
+export const DESCRIPTION_MAX_LENGTH = 2000;
+
+// Counts characters as the API does, so an emoji counts once.
+export function textLength(value: string) {
+  return Array.from(value.trim()).length;
+}
+
 export const initialFormState: InitiativeFormState = {
   name: "",
   address: "",
@@ -12,6 +19,7 @@ export const initialFormState: InitiativeFormState = {
   impact: "",
   type: "",
   mainODS: "",
+  description: "",
 };
 
 export function validateInitiativeForm(form: InitiativeFormState) {
@@ -41,6 +49,10 @@ export function validateInitiativeForm(form: InitiativeFormState) {
     errors.mainODS = "Informe o ODS principal.";
   } else if (!Number.isInteger(mainODS) || mainODS < 1 || mainODS > 17) {
     errors.mainODS = "Use um número entre 1 e 17.";
+  }
+
+  if (textLength(form.description) > DESCRIPTION_MAX_LENGTH) {
+    errors.description = "Use no máximo 2.000 caracteres.";
   }
 
   return errors;
