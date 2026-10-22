@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { type Column, DataTable } from "../ui/DataTable";
-import { FilterBar, SegmentedControl } from "../ui/Filters";
+import { FilterBar, SelectFilter } from "../ui/Filters";
 import { PageHeader } from "../ui/PageHeader";
 import { EmptyState } from "../ui/States";
 import type { Tone } from "../ui/StatusBadge";
@@ -14,11 +14,16 @@ import { PagedList } from "./PagedList";
 import { RefreshButton } from "./RefreshButton";
 import { usePage } from "./usePage";
 
-const targetOptions = [
-  { value: "", label: "Todos" },
-  { value: "user", label: "Usuários" },
-  { value: "initiative", label: "Iniciativas" },
-];
+const targetTypes: Record<AdminAction["target_type"], { label: string; option: string }> = {
+  user: { label: "Usuário", option: "Usuários" },
+  initiative: { label: "Iniciativa", option: "Iniciativas" },
+  post: { label: "Post", option: "Posts" },
+  comment: { label: "Comentário", option: "Comentários" },
+};
+
+const targetValues = Object.keys(targetTypes) as AdminAction["target_type"][];
+
+const targetOptions = targetValues.map((value) => ({ value, label: targetTypes[value].option }));
 
 const actionLabels: Record<string, { label: string; tone: Tone }> = {
   suspend_user: { label: "Suspendeu usuário", tone: "danger" },
@@ -27,6 +32,10 @@ const actionLabels: Record<string, { label: string; tone: Tone }> = {
   demote_user: { label: "Removeu administrador", tone: "warning" },
   suspend_initiative: { label: "Suspendeu iniciativa", tone: "danger" },
   reactivate_initiative: { label: "Reativou iniciativa", tone: "success" },
+  suspend_post: { label: "Suspendeu post", tone: "danger" },
+  reactivate_post: { label: "Reativou post", tone: "success" },
+  suspend_comment: { label: "Suspendeu comentário", tone: "danger" },
+  reactivate_comment: { label: "Reativou comentário", tone: "success" },
 };
 
 const columns: Column<AdminAction>[] = [
@@ -55,7 +64,7 @@ const columns: Column<AdminAction>[] = [
     cell: (action) => (
       <Identity
         title={action.target_label ?? "Registro removido"}
-        detail={action.target_type === "user" ? "Usuário" : "Iniciativa"}
+        detail={targetTypes[action.target_type]?.label}
       />
     ),
   },
@@ -72,7 +81,7 @@ const columns: Column<AdminAction>[] = [
 
 export default function Actions() {
   const { params, hrefWith, setParams } = useQueryParams();
-  const target = readOption(params, "target_type", ["user", "initiative"]);
+  const target = readOption(params, "target_type", targetValues);
   const page = readPage(params);
   const list = usePage<AdminAction>(listPath("actions", { target_type: target, page }));
 
@@ -85,8 +94,9 @@ export default function Actions() {
       />
 
       <FilterBar label="Filtrar auditoria">
-        <SegmentedControl
+        <SelectFilter
           label="Alvo"
+          allLabel="Todos os alvos"
           options={targetOptions}
           value={target}
           onChange={(value) => setParams({ target_type: value, page: undefined })}

@@ -5,13 +5,17 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { LoginRequired } from "@/components/LoginRequired";
 import { PageHeader } from "@/components/PageHeader";
-import { eyebrow, focusRing, loadIn } from "@/components/styles";
+import { eyebrow, focusRing, loadIn, secondaryButton } from "@/components/styles";
 import { useAuthToken } from "@/lib/auth";
 import { findGoal, type OdsGoal } from "@/lib/ods";
+import { ExpandableText } from "./feed/ExpandableText";
+import { InitiativeAvatar } from "./feed/InitiativeAvatar";
+import { InitiativePosts } from "./feed/InitiativePosts";
 import { fetchInitiative } from "./initiatives/api";
 import { initiativeFacts } from "./initiatives/format";
 import { Feedback } from "./initiatives/InitiativesList";
 import { MapFrame, MapLoading } from "./initiatives/MapFrame";
+import { MembersPanel } from "./initiatives/MembersPanel";
 import { SuspensionNotice } from "./initiatives/SuspensionNotice";
 import type { Initiative } from "./initiatives/types";
 
@@ -54,6 +58,8 @@ export default function InitiativeDetails({ id }: { id: string }) {
   }, [id, token]);
 
   const loaded = token && !error ? initiative : null;
+  const manageHref =
+    loaded?.viewer_role === "owner" ? `/initiatives/${encodeURIComponent(id)}/manage` : undefined;
 
   return (
     <main className="min-h-svh flex-1 bg-[var(--color-app-background)] pb-28 text-[var(--color-app-foreground)] transition-colors">
@@ -73,6 +79,23 @@ export default function InitiativeDetails({ id }: { id: string }) {
               loaded
                 ? loaded.name || "Iniciativa sem nome"
                 : "Detalhes da iniciativa"
+            }
+            media={
+              token === null || error ? undefined : loaded ? (
+                <InitiativeAvatar initiative={loaded} size="xl" />
+              ) : (
+                <span
+                  aria-hidden="true"
+                  className="size-16 shrink-0 rounded-lg border border-[var(--color-header-border)] bg-[var(--color-theme-toggle-background)] sm:size-24"
+                />
+              )
+            }
+            actions={
+              manageHref ? (
+                <Link href={manageHref} className={secondaryButton}>
+                  Gerenciar iniciativa
+                </Link>
+              ) : undefined
             }
           />
         </div>
@@ -97,12 +120,29 @@ export default function InitiativeDetails({ id }: { id: string }) {
         ) : null}
       </div>
 
-      {loaded ? <InitiativeProfile initiative={loaded} /> : null}
+      {loaded && token ? (
+        <InitiativeProfile
+          id={id}
+          initiative={loaded}
+          manageHref={manageHref}
+          token={token}
+        />
+      ) : null}
     </main>
   );
 }
 
-function InitiativeProfile({ initiative }: { initiative: Initiative }) {
+function InitiativeProfile({
+  id,
+  initiative,
+  manageHref,
+  token,
+}: {
+  id: string;
+  initiative: Initiative;
+  manageHref?: string;
+  token: string;
+}) {
   const goal = findGoal(initiative.main_ods);
   const facts = initiativeFacts(initiative);
   const stats = facts.filter((fact) => fact.stat);
@@ -111,6 +151,10 @@ function InitiativeProfile({ initiative }: { initiative: Initiative }) {
     initiative.lat && initiative.lon
       ? { lat: initiative.lat, lon: initiative.lon }
       : null;
+  const description = initiative.description?.trim();
+  const suspended = Boolean(initiative.suspended_at);
+  const canPublish =
+    !suspended && (initiative.viewer_role === "owner" || initiative.viewer_role === "member");
 
   return (
     <>
@@ -127,8 +171,23 @@ function InitiativeProfile({ initiative }: { initiative: Initiative }) {
             Sobre a iniciativa
           </h2>
 
+          {description ? (
+            <ExpandableText className="mt-6 max-w-2xl text-lg" lines={8} text={description} />
+          ) : manageHref ? (
+            <p className="mt-6 text-[var(--color-muted)]">
+              Conte a quem visita o que a iniciativa faz:{" "}
+              <Link
+                href={`${manageHref}?aba=dados`}
+                className={`font-bold text-[var(--color-app-foreground)] underline underline-offset-4 transition hover:text-[var(--color-link-hover)] ${focusRing}`}
+              >
+                escreva o texto “Sobre”
+              </Link>
+              .
+            </p>
+          ) : null}
+
           {stats.length > 0 ? (
-            <dl className="mt-6 flex flex-wrap gap-x-14 gap-y-6">
+            <dl className="mt-8 flex flex-wrap gap-x-14 gap-y-6">
               {stats.map((fact) => (
                 <div key={fact.label} className="flex flex-col-reverse">
                   <dt className="mt-2 font-bold">{fact.label}</dt>
@@ -174,6 +233,40 @@ function InitiativeProfile({ initiative }: { initiative: Initiative }) {
             </MapFrame>
           </section>
         ) : null}
+      </div>
+
+      <div
+        className={`mx-auto mt-24 grid max-w-6xl gap-14 px-4 sm:px-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-16 ${loadIn}`}
+        style={{ animationDelay: "300ms" }}
+      >
+        <div className="lg:col-start-2 lg:row-start-1">
+          <MembersPanel
+            token={token}
+            initiativeId={id}
+            expectedCount={initiative.members_count}
+            manageHref={manageHref}
+          />
+        </div>
+
+        <section aria-labelledby="activity-title" className="min-w-0 lg:col-start-1 lg:row-start-1">
+          <h2 id="activity-title" className={eyebrow}>
+            Atividades
+          </h2>
+          <div className="mt-6 max-w-2xl">
+            {suspended ? (
+              <p className="border-l-4 border-[var(--color-header-border)] py-1 pl-3 text-[var(--color-muted)]">
+                As atividades ficam ocultas enquanto a iniciativa estiver suspensa.
+              </p>
+            ) : (
+              <InitiativePosts
+                token={token}
+                initiativeId={id}
+                initiative={initiative}
+                canPublish={canPublish}
+              />
+            )}
+          </div>
+        </section>
       </div>
     </>
   );

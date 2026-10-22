@@ -35,6 +35,11 @@ export function Footer() {
                 Iniciativas
               </Link>
             </li>
+            <li>
+              <Link href="/feed" className={linkClassName}>
+                Atividades
+              </Link>
+            </li>
           </ul>
         </nav>
 

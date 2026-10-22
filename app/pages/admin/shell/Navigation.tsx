@@ -48,6 +48,16 @@ const items: { href: string; label: string; icon: ReactNode }[] = [
     ),
   },
   {
+    href: "/admin/content",
+    label: "Publicações",
+    icon: (
+      <>
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+        <path d="M8 8h8M8 12h5" />
+      </>
+    ),
+  },
+  {
     href: "/admin/actions",
     label: "Auditoria",
     icon: (

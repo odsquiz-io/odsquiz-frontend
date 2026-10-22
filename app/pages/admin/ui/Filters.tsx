@@ -1,8 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { type ReactNode, useEffect, useEffectEvent, useId, useState } from "react";
 import { Icon } from "./Icon";
-import { field, fieldLabel } from "./styles";
+import { field, fieldLabel, focusRing } from "./styles";
 
 export type Option = { value: string; label: string };
 
@@ -135,6 +136,39 @@ export function SelectFilter({
           <path d="m6 9 6 6 6-6" />
         </Icon>
       </div>
+    </div>
+  );
+}
+
+// A filter set from elsewhere (a link or a row action) that has no control of its own.
+export function FilterChip({
+  clearHref,
+  label,
+  value,
+}: {
+  clearHref: string;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="flex w-full flex-col gap-1 sm:w-auto">
+      <span className={fieldLabel}>{label}</span>
+      <span className="flex h-9 items-center gap-1 rounded-md bg-[var(--admin-accent-soft)] pl-3 pr-1 text-sm font-medium text-[var(--admin-accent)] sm:max-w-72">
+        <span className="min-w-0 flex-1 truncate" title={value}>
+          {value}
+        </span>
+        <Link
+          href={clearHref}
+          scroll={false}
+          aria-label={`Remover filtro de ${label.toLowerCase()}`}
+          title="Remover filtro"
+          className={`grid size-7 shrink-0 place-items-center rounded hover:bg-[var(--admin-surface)] motion-safe:transition-colors ${focusRing}`}
+        >
+          <Icon>
+            <path d="M18 6 6 18M6 6l12 12" />
+          </Icon>
+        </Link>
+      </span>
     </div>
   );
 }

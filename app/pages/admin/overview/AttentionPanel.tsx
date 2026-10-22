@@ -19,6 +19,10 @@ const verbs: Record<string, string> = {
   demote_user: "removeu o acesso de administrador de",
   suspend_initiative: "suspendeu a iniciativa",
   reactivate_initiative: "reativou a iniciativa",
+  suspend_post: "suspendeu o post",
+  reactivate_post: "reativou o post",
+  suspend_comment: "suspendeu o comentário",
+  reactivate_comment: "reativou o comentário",
 };
 
 export function AttentionPanel({
