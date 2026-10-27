@@ -55,13 +55,6 @@ export function readOption<T extends string>(
   return (options as readonly string[]).includes(value) ? (value as T) : "";
 }
 
-const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-export function readId(params: Params, key: string) {
-  const value = params.get(key) ?? "";
-  return uuidPattern.test(value) ? value : "";
-}
-
 export function readPage(params: Params) {
   const page = Number(params.get("page"));
   return Number.isInteger(page) && page > 1 ? page : 1;

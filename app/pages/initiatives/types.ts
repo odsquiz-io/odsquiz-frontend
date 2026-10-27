@@ -3,6 +3,9 @@ export type InitiativeFormField =
   | "address"
   | "cep"
   | "emailOwner"
+  | "whatsapp"
+  | "instagram"
+  | "website"
   | "actingArea"
   | "impact"
   | "type"
@@ -29,6 +32,9 @@ export type Initiative = {
   city?: string;
   state?: string;
   email_owner?: string;
+  whatsapp?: string | null;
+  instagram?: string | null;
+  website?: string | null;
   acting_area?: string;
   impact?: number;
   type?: string;
@@ -53,6 +59,13 @@ export type InitiativeSummary = {
   city: string;
   state: string;
   logo_url: string | null;
+};
+
+export type Photo = {
+  id: string;
+  url: string;
+  caption: string | null;
+  position: number;
 };
 
 export type Member = {

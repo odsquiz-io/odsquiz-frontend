@@ -3,10 +3,10 @@ import { flushSync } from "react-dom";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { AccountSuspendedError, useSession } from "@/components/SessionProvider";
 import { primaryButton, secondaryButton, surface } from "@/components/styles";
-import { InitiativeAvatar } from "../../feed/InitiativeAvatar";
+import { InitiativeAvatar } from "../InitiativeAvatar";
 import type { Initiative } from "../types";
 import { removeLogo, uploadLogo } from "./api";
-import { LOGO_TYPES, prepareLogo } from "./logo";
+import { IMAGE_TYPES, prepareLogo } from "./image";
 import { type Result, ResultMessage, resultFrom } from "./ResultMessage";
 import { busyButton, panelIntro, panelTitle } from "./styles";
 
@@ -143,7 +143,7 @@ export function LogoUploader({
             Logo
           </h2>
           <p className={panelIntro}>
-            Aparece na página da iniciativa, nas publicações e no feed. Use uma
+            Aparece na página pública, junto do nome da iniciativa. Use uma
             imagem PNG, JPG ou WebP: antes do envio, ela é reduzida para até
             512 × 512 pixels. Sem logo, mostramos as iniciais na cor do ODS
             principal.
@@ -152,7 +152,7 @@ export function LogoUploader({
           <input
             ref={inputRef}
             type="file"
-            accept={LOGO_TYPES.join(",")}
+            accept={IMAGE_TYPES.join(",")}
             hidden
             onChange={choose}
           />

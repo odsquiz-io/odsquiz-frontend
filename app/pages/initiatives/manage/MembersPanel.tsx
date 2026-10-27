@@ -3,7 +3,7 @@ import { flushSync } from "react-dom";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { AccountSuspendedError, useSession } from "@/components/SessionProvider";
 import { control, controlBorder, focusRing, primaryButton } from "@/components/styles";
-import { PersonAvatar } from "../../feed/PersonAvatar";
+import { PersonAvatar } from "../PersonAvatar";
 import { formatDate } from "../../profile/format";
 import { RequestError } from "../api";
 import { Feedback } from "../InitiativesList";
@@ -128,8 +128,8 @@ export function MembersPanel({
               Membros
             </h2>
             <p className={panelIntro}>
-              Quem faz parte da iniciativa pode publicar atividades em nome
-              dela. As publicações continuam na página mesmo se a pessoa sair.
+              Quem aceita o convite aparece em “Quem faz parte”, na página
+              pública da iniciativa.
             </p>
             <ResultMessage className="mt-4" result={result} />
 
@@ -227,8 +227,7 @@ export function MembersPanel({
             onClose={() => setRemoving(undefined)}
             onConfirm={() => remove(removing)}
           >
-            Essa pessoa deixa de poder publicar atividades em nome da
-            iniciativa. O que ela já publicou continua na página. Para voltar,
+            Essa pessoa deixa de aparecer na página da iniciativa. Para voltar,
             ela precisa de um novo convite.
           </ConfirmDialog>
         )

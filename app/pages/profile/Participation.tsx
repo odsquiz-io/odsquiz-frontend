@@ -7,7 +7,7 @@ import { AccountSuspendedError, useSession } from "@/components/SessionProvider"
 import { focusRing, primaryButton, secondaryButton, surface } from "@/components/styles";
 import { cityState } from "@/lib/cep";
 import { findGoal } from "@/lib/ods";
-import { InitiativeAvatar } from "../feed/InitiativeAvatar";
+import { InitiativeAvatar } from "../initiatives/InitiativeAvatar";
 import { RequestError } from "../initiatives/api";
 import { cardLink } from "../initiatives/InitiativesList";
 import { acceptInvitation, declineInvitation, removeMember } from "../initiatives/manage/api";
@@ -96,8 +96,8 @@ export function Invitations({
         label="Convites"
         title="Tem gente contando com você."
       >
-        Ao aceitar um convite, você passa a fazer parte da iniciativa e pode
-        publicar atividades em nome dela.
+        Ao aceitar um convite, você passa a fazer parte da iniciativa e aparece
+        em “Quem faz parte”, na página dela.
       </SectionHeader>
 
       <ResultMessage className="mt-8" result={result} />
@@ -259,8 +259,8 @@ export function Memberships({
           onClose={() => setLeaving(undefined)}
           onConfirm={() => leave(leaving)}
         >
-          Você deixa de fazer parte da iniciativa e não poderá mais publicar
-          atividades em nome dela. Para voltar, é preciso receber um novo convite.
+          Você deixa de fazer parte da iniciativa e sai da lista “Quem faz
+          parte”. Para voltar, é preciso receber um novo convite.
         </ConfirmDialog>
       ) : null}
     </section>

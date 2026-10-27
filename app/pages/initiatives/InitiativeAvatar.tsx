@@ -4,7 +4,12 @@ import Image from "next/image";
 import { useState } from "react";
 import { findGoal } from "@/lib/ods";
 import { initials } from "./format";
-import type { AvatarSource } from "./types";
+
+export type AvatarSource = {
+  name?: string;
+  main_ods?: number;
+  logo_url?: string | null;
+};
 
 const sizes = {
   sm: { box: "size-10 text-sm", pixels: 40 },

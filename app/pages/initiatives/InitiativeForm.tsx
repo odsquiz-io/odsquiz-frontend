@@ -15,7 +15,8 @@ import {
 } from "@/components/styles";
 import { findGoal } from "@/lib/ods";
 import { geocodeAddress } from "@/lib/cep";
-import { createInitiative, lookupAddressByCep, updateInitiative } from "./api";
+import { createInitiative, lookupAddressByCep, RequestError, updateInitiative } from "./api";
+import { formatWhatsapp } from "./format";
 import { MapFrame, MapLoading } from "./MapFrame";
 import type {
   CepLookupStatus,
@@ -28,8 +29,12 @@ import type {
   SubmitStatus,
 } from "./types";
 import {
+  contactErrors,
   DESCRIPTION_MAX_LENGTH,
   initialFormState,
+  normalizeInstagram,
+  normalizeWebsite,
+  normalizeWhatsapp,
   textLength,
   validateInitiativeForm,
 } from "./validation";
@@ -43,16 +48,39 @@ type FieldConfig = {
   autoComplete?: string;
   field: InitiativeFormField;
   hint: ReactNode;
-  inputMode?: "numeric";
+  inputMode?: "numeric" | "tel" | "url";
   kind?: "input" | "textarea" | "cep" | "select";
   label: string;
   max?: number;
   min?: number;
   optional?: boolean;
   options?: string[];
-  type?: "email" | "number" | "text";
+  spellCheck?: boolean;
+  type?: "email" | "number" | "tel" | "text" | "url";
   width?: string;
 };
+
+type ContactField = "whatsapp" | "instagram" | "website";
+
+// On blur a valid contact is rewritten the way the public page shows it.
+const contacts: Record<ContactField, (value: string) => string | undefined> = {
+  whatsapp: (value) => {
+    const digits = normalizeWhatsapp(value);
+    return digits === undefined ? undefined : formatWhatsapp(digits);
+  },
+  instagram: (value) => {
+    const handle = normalizeInstagram(value);
+    return handle === undefined ? undefined : handle ? `@${handle}` : "";
+  },
+  website: (value) => {
+    const website = normalizeWebsite(value);
+    return website === undefined ? undefined : value.trim();
+  },
+};
+
+function isContactField(field: string): field is ContactField {
+  return Object.hasOwn(contacts, field);
+}
 
 const aboutFields: FieldConfig[] = [
   {
@@ -141,9 +169,38 @@ const contactFields: FieldConfig[] = [
   {
     autoComplete: "email",
     field: "emailOwner",
-    hint: "Contato de quem responde pela iniciativa. Fica visível na página dela.",
-    label: "Email do responsável",
+    hint: "Aparece na página pública para quem quiser falar com a iniciativa.",
+    label: "E-mail de contato",
+    spellCheck: false,
     type: "email",
+  },
+  {
+    autoComplete: "tel",
+    field: "whatsapp",
+    hint: "Número com DDD. Ex.: (22) 99999-9999.",
+    inputMode: "tel",
+    label: "WhatsApp",
+    optional: true,
+    type: "tel",
+    width: "sm:max-w-xs",
+  },
+  {
+    autoComplete: "off",
+    field: "instagram",
+    hint: "Perfil da iniciativa, com ou sem @. Ex.: @suainiciativa.",
+    label: "Instagram",
+    optional: true,
+    spellCheck: false,
+    width: "sm:max-w-sm",
+  },
+  {
+    autoComplete: "url",
+    field: "website",
+    hint: "Endereço da página da iniciativa na internet. Ex.: suainiciativa.org.br.",
+    inputMode: "url",
+    label: "Site",
+    optional: true,
+    spellCheck: false,
   },
 ];
 
@@ -153,6 +210,9 @@ function formStateFrom(initiative: Initiative): InitiativeFormState {
     address: initiative.address ?? "",
     cep: initiative.cep ?? "",
     emailOwner: initiative.email_owner ?? "",
+    whatsapp: formatWhatsapp(initiative.whatsapp),
+    instagram: initiative.instagram ? `@${initiative.instagram}` : "",
+    website: initiative.website ?? "",
     actingArea: initiative.acting_area ?? "",
     impact: initiative.impact === undefined ? "" : String(initiative.impact),
     type: initiative.type ?? "",
@@ -212,6 +272,16 @@ export function InitiativeForm({
       delete nextErrors[field];
       return nextErrors;
     });
+  }
+
+  function checkContact(field: ContactField) {
+    const value = contacts[field](form[field]);
+
+    if (value === undefined) {
+      setFieldErrors((currentErrors) => ({ ...currentErrors, [field]: contactErrors[field] }));
+    } else if (value !== form[field]) {
+      setForm((currentForm) => ({ ...currentForm, [field]: value }));
+    }
   }
 
   async function handleCepLookup() {
@@ -313,6 +383,16 @@ export function InitiativeForm({
     } catch (error) {
       if (error instanceof AccountSuspendedError) {
         signOutSuspended();
+      }
+
+      const field = error instanceof RequestError ? error.code?.replace(/^invalid_/, "") : undefined;
+
+      if (field && isContactField(field)) {
+        flushSync(() =>
+          setFieldErrors((currentErrors) => ({ ...currentErrors, [field]: contactErrors[field] })),
+        );
+        formElement.querySelector<HTMLElement>(`#initiative-${field}`)?.focus();
+        return;
       }
 
       setMessage(
@@ -466,13 +546,17 @@ export function InitiativeForm({
       );
     }
 
+    const contactField = isContactField(field.field) ? field.field : undefined;
     const input = (
       <input
         {...sharedProps}
+        autoCapitalize={field.spellCheck === false ? "none" : undefined}
         autoComplete={field.autoComplete}
         inputMode={field.inputMode}
         max={field.max}
         min={field.min}
+        onBlur={contactField ? () => checkContact(contactField) : undefined}
+        spellCheck={field.spellCheck}
         step={field.type === "number" ? "1" : undefined}
         type={field.type ?? "text"}
         className={`${control} ${controlBorder(error)} ${field.width ?? ""}`}
