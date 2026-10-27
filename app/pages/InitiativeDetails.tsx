@@ -8,25 +8,32 @@ import { PageHeader } from "@/components/PageHeader";
 import { eyebrow, focusRing, loadIn, secondaryButton } from "@/components/styles";
 import { useAuthToken } from "@/lib/auth";
 import { findGoal, type OdsGoal } from "@/lib/ods";
-import { ExpandableText } from "./feed/ExpandableText";
-import { InitiativeAvatar } from "./feed/InitiativeAvatar";
-import { InitiativePosts } from "./feed/InitiativePosts";
 import { fetchInitiative } from "./initiatives/api";
+import { ContactLinks } from "./initiatives/details/ContactLinks";
+import { ManageHint } from "./initiatives/details/ManageHint";
+import { PhotoGallery } from "./initiatives/details/PhotoGallery";
+import { ProfileHeader } from "./initiatives/details/ProfileHeader";
+import { ExpandableText } from "./initiatives/ExpandableText";
 import { initiativeFacts } from "./initiatives/format";
 import { Feedback } from "./initiatives/InitiativesList";
+import { resultFrom } from "./initiatives/manage/ResultMessage";
 import { MapFrame, MapLoading } from "./initiatives/MapFrame";
 import { MembersPanel } from "./initiatives/MembersPanel";
+import { fetchPhotos } from "./initiatives/photos/api";
 import { SuspensionNotice } from "./initiatives/SuspensionNotice";
-import type { Initiative } from "./initiatives/types";
+import type { Initiative, Photo } from "./initiatives/types";
 
 const LocationMap = dynamic(
   () => import("./initiatives/map/LocationMap").then((mod) => mod.LocationMap),
   { loading: MapLoading, ssr: false },
 );
 
+type Photos = { items: Photo[]; error?: string };
+
 export default function InitiativeDetails({ id }: { id: string }) {
   const token = useAuthToken();
   const [initiative, setInitiative] = useState<Initiative | null>(null);
+  const [photos, setPhotos] = useState<Photos>();
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -52,14 +59,29 @@ export default function InitiativeDetails({ id }: { id: string }) {
         }
       });
 
+    fetchPhotos(token, id).then(
+      (items) => {
+        if (isCurrent) {
+          setPhotos({ items });
+        }
+      },
+      (photosError) => {
+        if (isCurrent) {
+          setPhotos({ items: [], error: resultFrom(photosError).text });
+        }
+      },
+    );
+
     return () => {
       isCurrent = false;
     };
   }, [id, token]);
 
-  const loaded = token && !error ? initiative : null;
+  // Waits for the photos too, so the cover never pushes the page down after it renders.
+  const loaded = token && !error && photos ? initiative : null;
   const manageHref =
     loaded?.viewer_role === "owner" ? `/initiatives/${encodeURIComponent(id)}/manage` : undefined;
+  const visiblePhotos = loaded && !loaded.suspended_at ? (photos?.items ?? []) : [];
 
   return (
     <main className="min-h-svh flex-1 bg-[var(--color-app-background)] pb-28 text-[var(--color-app-foreground)] transition-colors">
@@ -73,31 +95,32 @@ export default function InitiativeDetails({ id }: { id: string }) {
         </Link>
 
         <div className="mt-8">
-          <PageHeader
-            label="Iniciativa"
-            title={
-              loaded
-                ? loaded.name || "Iniciativa sem nome"
-                : "Detalhes da iniciativa"
-            }
-            media={
-              token === null || error ? undefined : loaded ? (
-                <InitiativeAvatar initiative={loaded} size="xl" />
-              ) : (
-                <span
-                  aria-hidden="true"
-                  className="size-16 shrink-0 rounded-lg border border-[var(--color-header-border)] bg-[var(--color-theme-toggle-background)] sm:size-24"
-                />
-              )
-            }
-            actions={
-              manageHref ? (
-                <Link href={manageHref} className={secondaryButton}>
-                  Gerenciar iniciativa
-                </Link>
-              ) : undefined
-            }
-          />
+          {loaded ? (
+            <ProfileHeader
+              initiative={loaded}
+              cover={visiblePhotos[0]}
+              actions={
+                manageHref ? (
+                  <Link href={manageHref} className={secondaryButton}>
+                    Gerenciar iniciativa
+                  </Link>
+                ) : undefined
+              }
+            />
+          ) : (
+            <PageHeader
+              label="Iniciativa"
+              title="Detalhes da iniciativa"
+              media={
+                token === null || error ? undefined : (
+                  <span
+                    aria-hidden="true"
+                    className="size-16 shrink-0 rounded-lg border border-[var(--color-header-border)] bg-[var(--color-theme-toggle-background)] sm:size-24"
+                  />
+                )
+              }
+            />
+          )}
         </div>
 
         {loaded ? (
@@ -113,7 +136,7 @@ export default function InitiativeDetails({ id }: { id: string }) {
           <Feedback className="mt-12" tone="error">
             {error}
           </Feedback>
-        ) : !initiative ? (
+        ) : !loaded ? (
           <Feedback className="mt-12" tone="loading">
             Carregando iniciativa...
           </Feedback>
@@ -125,6 +148,8 @@ export default function InitiativeDetails({ id }: { id: string }) {
           id={id}
           initiative={loaded}
           manageHref={manageHref}
+          photos={visiblePhotos}
+          photosError={photos?.error}
           token={token}
         />
       ) : null}
@@ -136,54 +161,49 @@ function InitiativeProfile({
   id,
   initiative,
   manageHref,
+  photos,
+  photosError,
   token,
 }: {
   id: string;
   initiative: Initiative;
   manageHref?: string;
+  photos: Photo[];
+  photosError?: string;
   token: string;
 }) {
   const goal = findGoal(initiative.main_ods);
   const facts = initiativeFacts(initiative);
   const stats = facts.filter((fact) => fact.stat);
-  const details = facts.filter((fact) => !fact.stat);
+  // The e-mail, the only linked fact, is listed under "Contato".
+  const details = facts.filter((fact) => !fact.stat && !fact.href);
   const coordinates =
     initiative.lat && initiative.lon
       ? { lat: initiative.lat, lon: initiative.lon }
       : null;
   const description = initiative.description?.trim();
   const suspended = Boolean(initiative.suspended_at);
-  const canPublish =
-    !suspended && (initiative.viewer_role === "owner" || initiative.viewer_role === "member");
+  const showPhotos = photos.length > 0 || Boolean(manageHref);
 
   return (
     <>
       {goal ? <GoalPanel goal={goal} /> : null}
 
       <div
-        className={`mx-auto mt-16 grid max-w-6xl gap-14 px-4 sm:px-6 ${
-          coordinates ? "lg:grid-cols-2" : ""
-        } ${loadIn}`}
+        className={`mx-auto mt-16 grid max-w-6xl gap-14 px-4 sm:px-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-16 ${loadIn}`}
         style={{ animationDelay: "150ms" }}
       >
-        <section aria-labelledby="facts-title">
-          <h2 id="facts-title" className={eyebrow}>
+        <section aria-labelledby="about-title" className="min-w-0">
+          <h2 id="about-title" className={eyebrow}>
             Sobre a iniciativa
           </h2>
 
           {description ? (
             <ExpandableText className="mt-6 max-w-2xl text-lg" lines={8} text={description} />
           ) : manageHref ? (
-            <p className="mt-6 text-[var(--color-muted)]">
-              Conte a quem visita o que a iniciativa faz:{" "}
-              <Link
-                href={`${manageHref}?aba=dados`}
-                className={`font-bold text-[var(--color-app-foreground)] underline underline-offset-4 transition hover:text-[var(--color-link-hover)] ${focusRing}`}
-              >
-                escreva o texto “Sobre”
-              </Link>
-              .
-            </p>
+            <ManageHint href={`${manageHref}?aba=dados`} label="escreva o texto “Sobre”">
+              Conte a quem visita o que a iniciativa faz:
+            </ManageHint>
           ) : null}
 
           {stats.length > 0 ? (
@@ -199,32 +219,43 @@ function InitiativeProfile({
             </dl>
           ) : null}
 
-          <dl className="mt-10 border-b border-[var(--color-header-border)]">
-            {details.map((fact) => (
-              <div
-                key={fact.label}
-                className="grid gap-1 border-t border-[var(--color-header-border)] py-4 sm:grid-cols-[10rem_1fr] sm:gap-6"
-              >
-                <dt className="text-[var(--color-muted)]">{fact.label}</dt>
-                <dd className="font-bold wrap-anywhere">
-                  {fact.href ? (
-                    <a
-                      href={fact.href}
-                      className={`underline underline-offset-4 transition hover:text-[var(--color-link-hover)] ${focusRing}`}
-                    >
-                      {fact.value}
-                    </a>
-                  ) : (
-                    fact.value
-                  )}
-                </dd>
-              </div>
-            ))}
-          </dl>
+          {details.length > 0 ? (
+            <dl className="mt-10 max-w-2xl border-b border-[var(--color-header-border)]">
+              {details.map((fact) => (
+                <div
+                  key={fact.label}
+                  className="grid gap-1 border-t border-[var(--color-header-border)] py-4 sm:grid-cols-[10rem_1fr] sm:gap-6"
+                >
+                  <dt className="text-[var(--color-muted)]">{fact.label}</dt>
+                  <dd className="font-bold wrap-anywhere">{fact.value}</dd>
+                </div>
+              ))}
+            </dl>
+          ) : null}
         </section>
 
+        <ContactLinks initiative={initiative} manageHref={manageHref} />
+      </div>
+
+      {showPhotos || photosError || suspended ? (
+        <PhotoGallery
+          className={`mx-auto mt-24 max-w-6xl px-4 sm:px-6 ${loadIn}`}
+          error={photosError}
+          initiativeName={initiative.name || "Iniciativa sem nome"}
+          manageHref={manageHref}
+          photos={photos}
+          suspended={suspended}
+        />
+      ) : null}
+
+      <div
+        className={`mx-auto mt-24 grid max-w-6xl gap-14 px-4 sm:px-6 lg:gap-16 ${
+          coordinates ? "lg:grid-cols-[minmax(0,1fr)_20rem]" : ""
+        } ${loadIn}`}
+        style={{ animationDelay: "300ms" }}
+      >
         {coordinates ? (
-          <section aria-labelledby="location-title">
+          <section aria-labelledby="location-title" className="min-w-0">
             <h2 id="location-title" className={eyebrow}>
               Onde fica
             </h2>
@@ -233,13 +264,8 @@ function InitiativeProfile({
             </MapFrame>
           </section>
         ) : null}
-      </div>
 
-      <div
-        className={`mx-auto mt-24 grid max-w-6xl gap-14 px-4 sm:px-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-16 ${loadIn}`}
-        style={{ animationDelay: "300ms" }}
-      >
-        <div className="lg:col-start-2 lg:row-start-1">
+        <div className={coordinates ? undefined : "max-w-2xl"}>
           <MembersPanel
             token={token}
             initiativeId={id}
@@ -247,26 +273,6 @@ function InitiativeProfile({
             manageHref={manageHref}
           />
         </div>
-
-        <section aria-labelledby="activity-title" className="min-w-0 lg:col-start-1 lg:row-start-1">
-          <h2 id="activity-title" className={eyebrow}>
-            Atividades
-          </h2>
-          <div className="mt-6 max-w-2xl">
-            {suspended ? (
-              <p className="border-l-4 border-[var(--color-header-border)] py-1 pl-3 text-[var(--color-muted)]">
-                As atividades ficam ocultas enquanto a iniciativa estiver suspensa.
-              </p>
-            ) : (
-              <InitiativePosts
-                token={token}
-                initiativeId={id}
-                initiative={initiative}
-                canPublish={canPublish}
-              />
-            )}
-          </div>
-        </section>
       </div>
     </>
   );

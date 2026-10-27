@@ -36,32 +36,6 @@ export type AdminInitiative = {
   owner: { id: string; name: string; email: string } | null;
 };
 
-type Person = { id: string; name: string; email: string };
-
-export type AdminPost = {
-  id: string;
-  body: string;
-  created_at: string;
-  edited_at: string | null;
-  suspended_at: string | null;
-  suspension_reason: string | null;
-  comments_count: number;
-  initiative: { id: string; name: string };
-  author: Person;
-};
-
-export type AdminComment = {
-  id: string;
-  body: string;
-  created_at: string;
-  edited_at: string | null;
-  suspended_at: string | null;
-  suspension_reason: string | null;
-  post: { id: string; body_excerpt: string };
-  initiative: { id: string; name: string };
-  author: Person;
-};
-
 export type AdminAction = {
   id: string;
   action: string;
@@ -75,7 +49,7 @@ export type AdminAction = {
 
 export const PAGE_SIZE = 25;
 
-type Subject = "list" | "user" | "initiative" | "post" | "comment";
+type Subject = "list" | "user" | "initiative";
 
 export class AdminApiError extends Error {
   status: number;
@@ -122,22 +96,6 @@ export function suspendInitiative(token: string, id: string, reason: string) {
 
 export function reactivateInitiative(token: string, id: string) {
   return send<AdminInitiative>(token, "initiative", `initiatives/${id}/reactivate`, "POST");
-}
-
-export function suspendPost(token: string, id: string, reason: string) {
-  return send<AdminPost>(token, "post", `posts/${id}/suspend`, "POST", { reason });
-}
-
-export function reactivatePost(token: string, id: string) {
-  return send<AdminPost>(token, "post", `posts/${id}/reactivate`, "POST");
-}
-
-export function suspendComment(token: string, id: string, reason: string) {
-  return send<AdminComment>(token, "comment", `comments/${id}/suspend`, "POST", { reason });
-}
-
-export function reactivateComment(token: string, id: string) {
-  return send<AdminComment>(token, "comment", `comments/${id}/reactivate`, "POST");
 }
 
 async function send<T>(
@@ -199,9 +157,6 @@ const messages: Record<string, string> = {
   invalid_request: "O pedido não pôde ser processado. Confira os dados e tente de novo.",
   user_not_found: "Este usuário não foi encontrado. A lista foi atualizada.",
   initiative_not_found: "Esta iniciativa não foi encontrada. A lista foi atualizada.",
-  post_not_found: "Este post não foi encontrado. O autor pode tê-lo excluído. A lista foi atualizada.",
-  comment_not_found:
-    "Este comentário não foi encontrado. O autor pode tê-lo excluído. A lista foi atualizada.",
   cannot_target_self: "Você não pode suspender nem mudar o papel da sua própria conta.",
   target_is_admin:
     "Administradores não podem ser suspensos. Remova o acesso de administrador antes de suspender.",
@@ -217,14 +172,6 @@ const conflicts: Record<Exclude<Subject, "list">, Record<string, string>> = {
   initiative: {
     already_suspended: "Esta iniciativa já estava suspensa. A lista foi atualizada.",
     not_suspended: "Esta iniciativa já estava ativa. A lista foi atualizada.",
-  },
-  post: {
-    already_suspended: "Este post já estava suspenso. A lista foi atualizada.",
-    not_suspended: "Este post já estava ativo. A lista foi atualizada.",
-  },
-  comment: {
-    already_suspended: "Este comentário já estava suspenso. A lista foi atualizada.",
-    not_suspended: "Este comentário já estava ativo. A lista foi atualizada.",
   },
 };
 

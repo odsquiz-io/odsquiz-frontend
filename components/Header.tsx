@@ -22,7 +22,6 @@ const navItems = [
   { label: "Início", href: "/" },
   { label: "Quiz", href: "/quiz" },
   { label: "Iniciativas", href: "/initiatives" },
-  { label: "Atividades", href: "/feed" },
 ];
 
 const iconButton = `grid size-10 shrink-0 place-items-center rounded-[var(--size-theme-toggle-radius)] border border-[var(--color-header-border)] bg-[var(--color-theme-toggle-background)] transition hover:border-[var(--color-link-hover)] hover:bg-[var(--color-theme-toggle-hover)] ${focusRing}`;

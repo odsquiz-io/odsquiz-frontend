@@ -14,6 +14,11 @@ const nextConfig: NextConfig = {
         destination: "/initiatives/:path*",
         permanent: true,
       },
+      {
+        source: "/feed",
+        destination: "/initiatives",
+        permanent: true,
+      },
     ];
   },
   async rewrites() {

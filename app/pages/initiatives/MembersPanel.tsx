@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { eyebrow, focusRing } from "@/components/styles";
-import { errorMessage } from "../feed/api";
-import { PersonAvatar } from "../feed/PersonAvatar";
 import { formatDate } from "../profile/format";
 import { fetchMembers } from "./manage/api";
+import { resultFrom } from "./manage/ResultMessage";
+import { PersonAvatar } from "./PersonAvatar";
 import type { MembersList } from "./types";
 
 type Loaded = { key: string; data?: MembersList; error?: string };
@@ -38,7 +38,7 @@ export function MembersPanel({
       },
       (error) => {
         if (isCurrent) {
-          setLoaded({ key, error: errorMessage(error, "Não foi possível carregar os membros.") });
+          setLoaded({ key, error: resultFrom(error).text });
         }
       },
     );
@@ -59,7 +59,7 @@ export function MembersPanel({
           <p role="status" className="sr-only">
             Carregando membros...
           </p>
-          {/* Holds the expected rows' space, so the feed below never jumps. */}
+          {/* Holds the expected rows' space, so the content below never jumps. */}
           <ul aria-hidden="true" className="mt-6 border-b border-[var(--color-header-border)]">
             {Array.from({ length: Math.min(expectedCount, 8) + 1 }, (_, index) => (
               <li
@@ -103,7 +103,7 @@ export function MembersPanel({
           {active.length === 0 ? (
             <p className="mt-4 text-sm text-[var(--color-muted)]">
               {manageHref
-                ? "Ninguém mais participa ainda. Convide pessoas para publicar atividades com você."
+                ? "Ninguém mais participa ainda. Convide quem trabalha com você na iniciativa."
                 : "Ainda não há outras pessoas participando."}
             </p>
           ) : null}

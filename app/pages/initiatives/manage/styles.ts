@@ -9,3 +9,5 @@ export const rowButton = `inline-flex min-h-11 shrink-0 items-center justify-cen
 
 export const busyButton =
   "disabled:cursor-not-allowed disabled:opacity-60 aria-disabled:cursor-wait aria-disabled:opacity-60";
+
+export const rowPrimaryButton = `inline-flex min-h-11 shrink-0 items-center justify-center rounded-md border-2 border-[var(--color-app-foreground)] bg-[var(--color-app-foreground)] px-4 text-sm font-bold text-[var(--color-app-background)] transition hover:opacity-85 ${focusRing}`;

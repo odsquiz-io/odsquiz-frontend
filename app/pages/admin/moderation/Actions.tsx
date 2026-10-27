@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { type Column, DataTable } from "../ui/DataTable";
-import { FilterBar, SelectFilter } from "../ui/Filters";
+import { FilterBar, SegmentedControl } from "../ui/Filters";
 import { PageHeader } from "../ui/PageHeader";
 import { EmptyState } from "../ui/States";
 import type { Tone } from "../ui/StatusBadge";
@@ -14,16 +14,18 @@ import { PagedList } from "./PagedList";
 import { RefreshButton } from "./RefreshButton";
 import { usePage } from "./usePage";
 
-const targetTypes: Record<AdminAction["target_type"], { label: string; option: string }> = {
-  user: { label: "Usuário", option: "Usuários" },
-  initiative: { label: "Iniciativa", option: "Iniciativas" },
-  post: { label: "Post", option: "Posts" },
-  comment: { label: "Comentário", option: "Comentários" },
+const targetLabels: Record<AdminAction["target_type"], string> = {
+  user: "Usuário",
+  initiative: "Iniciativa",
+  post: "Post",
+  comment: "Comentário",
 };
 
-const targetValues = Object.keys(targetTypes) as AdminAction["target_type"][];
-
-const targetOptions = targetValues.map((value) => ({ value, label: targetTypes[value].option }));
+const targetOptions = [
+  { value: "", label: "Todos" },
+  { value: "user", label: "Usuários" },
+  { value: "initiative", label: "Iniciativas" },
+];
 
 const actionLabels: Record<string, { label: string; tone: Tone }> = {
   suspend_user: { label: "Suspendeu usuário", tone: "danger" },
@@ -64,7 +66,7 @@ const columns: Column<AdminAction>[] = [
     cell: (action) => (
       <Identity
         title={action.target_label ?? "Registro removido"}
-        detail={targetTypes[action.target_type]?.label}
+        detail={targetLabels[action.target_type]}
       />
     ),
   },
@@ -81,7 +83,7 @@ const columns: Column<AdminAction>[] = [
 
 export default function Actions() {
   const { params, hrefWith, setParams } = useQueryParams();
-  const target = readOption(params, "target_type", targetValues);
+  const target = readOption(params, "target_type", ["user", "initiative"]);
   const page = readPage(params);
   const list = usePage<AdminAction>(listPath("actions", { target_type: target, page }));
 
@@ -94,9 +96,8 @@ export default function Actions() {
       />
 
       <FilterBar label="Filtrar auditoria">
-        <SelectFilter
+        <SegmentedControl
           label="Alvo"
-          allLabel="Todos os alvos"
           options={targetOptions}
           value={target}
           onChange={(value) => setParams({ target_type: value, page: undefined })}

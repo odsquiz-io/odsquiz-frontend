@@ -9,8 +9,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { useSession } from "@/components/SessionProvider";
 import { focusRing, loadIn, primaryButton, secondaryButton, surface } from "@/components/styles";
 import { useAuthToken } from "@/lib/auth";
-import { InitiativeAvatar } from "../../feed/InitiativeAvatar";
-import { InitiativePosts } from "../../feed/InitiativePosts";
+import { InitiativeAvatar } from "../InitiativeAvatar";
 import { fetchInitiative } from "../api";
 import { InitiativeForm } from "../InitiativeForm";
 import { Feedback } from "../InitiativesList";
@@ -18,12 +17,13 @@ import { SuspensionNotice } from "../SuspensionNotice";
 import type { Initiative } from "../types";
 import { LogoUploader } from "./LogoUploader";
 import { MembersPanel } from "./MembersPanel";
+import { PhotosPanel } from "./PhotosPanel";
 import { panelIntro, panelTitle } from "./styles";
 
 const tabs = [
   { id: "dados", label: "Dados" },
+  { id: "fotos", label: "Fotos" },
   { id: "membros", label: "Membros" },
-  { id: "atividades", label: "Atividades" },
 ] as const;
 
 type Tab = (typeof tabs)[number]["id"];
@@ -168,8 +168,8 @@ function NotOwner({ href, member }: { href: string; member: boolean }) {
         </h2>
         <p className="mt-2 text-[var(--color-muted)]">
           {member
-            ? "Você participa desta iniciativa e pode publicar atividades na página dela, mas só a pessoa responsável altera os dados, o logo e os membros."
-            : "Esta área é exclusiva de quem cadastrou a iniciativa. Na página pública você vê os dados, os membros e as atividades dela."}
+            ? "Você participa desta iniciativa, mas só a pessoa responsável altera os dados, as fotos e os membros."
+            : "Esta área é exclusiva de quem cadastrou a iniciativa. Na página pública você vê os dados, as fotos e quem faz parte dela."}
         </p>
         <Link href={href} className={`mt-6 ${primaryButton}`}>
           Ver página pública
@@ -291,27 +291,8 @@ function TabContent({
     return <MembersPanel initiativeId={initiativeId} token={token} />;
   }
 
-  if (tab === "atividades") {
-    return (
-      <section aria-labelledby="posts-title" className="max-w-3xl">
-        <h2 id="posts-title" className={panelTitle}>
-          Atividades
-        </h2>
-        <p className={panelIntro}>
-          {initiative.suspended_at
-            ? "Enquanto a iniciativa estiver suspensa, não é possível publicar e as atividades ficam fora da página pública e do feed."
-            : "Conte o que a iniciativa tem feito. As publicações aparecem na página pública e no feed de atividades, e quem faz parte da iniciativa também pode publicar."}
-        </p>
-        <div className="mt-8">
-          <InitiativePosts
-            token={token}
-            initiativeId={initiativeId}
-            initiative={initiative}
-            canPublish={!initiative.suspended_at}
-          />
-        </div>
-      </section>
-    );
+  if (tab === "fotos") {
+    return <PhotosPanel initiativeId={initiativeId} token={token} />;
   }
 
   return (

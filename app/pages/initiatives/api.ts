@@ -1,6 +1,12 @@
 import { AccountSuspendedError, isAccountSuspended } from "@/components/SessionProvider";
 import { cityState, lookupCep, states } from "@/lib/cep";
 import type { Coordinates, Initiative, InitiativeFormState, Place } from "./types";
+import {
+  contactErrors,
+  normalizeInstagram,
+  normalizeWebsite,
+  normalizeWhatsapp,
+} from "./validation";
 
 export async function fetchInitiatives(token: string) {
   const payload = await request(
@@ -80,6 +86,9 @@ function initiativePayload(
     city: place.city,
     state: place.state,
     email_owner: form.emailOwner.trim(),
+    whatsapp: contact(normalizeWhatsapp, form.whatsapp),
+    instagram: contact(normalizeInstagram, form.instagram),
+    website: contact(normalizeWebsite, form.website),
     acting_area: form.actingArea.trim(),
     impact: Number(form.impact),
     type: form.type.trim(),
@@ -87,6 +96,12 @@ function initiativePayload(
     lat: coordinates.lat,
     lon: coordinates.lon,
   };
+}
+
+// An invalid value goes as typed, so the API rejects it instead of clearing the field.
+function contact(normalize: (value: string) => string | null | undefined, value: string) {
+  const normalized = normalize(value);
+  return normalized === undefined ? value.trim() : normalized;
 }
 
 export async function lookupAddressByCep(cep: string) {
@@ -141,6 +156,11 @@ const codeMessages: Record<string, string> = {
   invalid_image: "Use uma imagem PNG, JPG ou WebP.",
   image_too_large: "A imagem passa de 2 MB. Escolha uma imagem menor.",
   logo_not_found: "Esta iniciativa não tem logo.",
+  invalid_whatsapp: contactErrors.whatsapp,
+  invalid_instagram: contactErrors.instagram,
+  invalid_website: contactErrors.website,
+  photo_not_found: "Esta foto não existe mais.",
+  photo_limit_reached: "A iniciativa já tem 12 fotos. Exclua uma para enviar outra.",
   storage_unavailable:
     "O envio de imagens está indisponível no momento. Tente de novo mais tarde.",
   user_not_found:

@@ -1,7 +1,6 @@
-import { type ReactNode, useId, useState } from "react";
+import type { ReactNode } from "react";
 import { formatDate, formatDateTime } from "../ui/format";
 import type { Tone } from "../ui/StatusBadge";
-import { focusRing } from "../ui/styles";
 
 export const none = <span className="text-[var(--admin-muted)]">—</span>;
 
@@ -31,10 +30,6 @@ export function Identity({
   );
 }
 
-export function personName(person: { name: string; email: string }) {
-  return person.name || person.email || "Conta removida";
-}
-
 export function Emphasis({ children }: { children: ReactNode }) {
   return <strong className="font-medium text-[var(--admin-text)]">{children}</strong>;
 }
@@ -44,19 +39,6 @@ export function DateTime({ value, withTime = false }: { value: string; withTime?
     <time dateTime={value} className="whitespace-nowrap">
       {withTime ? formatDateTime(value) : formatDate(value)}
     </time>
-  );
-}
-
-export function Published({ createdAt, editedAt }: { createdAt: string; editedAt: string | null }) {
-  return (
-    <div>
-      <DateTime value={createdAt} withTime />
-      {editedAt ? (
-        <p className="whitespace-nowrap text-xs">
-          editado em <DateTime value={editedAt} withTime />
-        </p>
-      ) : null}
-    </div>
   );
 }
 
@@ -103,42 +85,4 @@ export function Marker({ children, tone = "neutral" }: { children: ReactNode; to
 
 export function Text({ children }: { children?: string | null }) {
   return children || none;
-}
-
-// Clamps user-written text to three lines, with a toggle when it is likely to be cut.
-export function LongText({ children }: { children: string }) {
-  const id = useId();
-  const [expanded, setExpanded] = useState(false);
-  const long = children.length > 180 || children.split("\n").length > 3;
-
-  return (
-    <div className="min-w-64 max-w-md">
-      <p id={id} className={`whitespace-pre-line break-words ${expanded ? "" : "line-clamp-3"}`}>
-        {children}
-      </p>
-      {long ? (
-        <button
-          type="button"
-          aria-expanded={expanded}
-          aria-controls={id}
-          onClick={() => setExpanded((value) => !value)}
-          className={`mt-1 rounded text-xs font-medium text-[var(--admin-accent)] underline-offset-2 hover:underline ${focusRing}`}
-        >
-          {expanded ? "Mostrar menos" : "Mostrar tudo"}
-        </button>
-      ) : null}
-    </div>
-  );
-}
-
-export function Quote({ children, limit = 280 }: { children: string; limit?: number }) {
-  const characters = Array.from(children);
-  const text =
-    characters.length > limit ? `${characters.slice(0, limit).join("").trimEnd()}…` : children;
-
-  return (
-    <blockquote className="mt-3 whitespace-pre-line break-words border-l-2 border-[var(--admin-control)] pl-3 text-[var(--admin-text)]">
-      {text}
-    </blockquote>
-  );
 }
