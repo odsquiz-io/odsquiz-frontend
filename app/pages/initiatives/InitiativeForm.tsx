@@ -2,6 +2,7 @@ import dynamic from "next/dynamic";
 import type { ChangeEvent, ReactNode, SyntheticEvent } from "react";
 import { useState } from "react";
 import { flushSync } from "react-dom";
+import { NewTabLink } from "@/components/NewTabLink";
 import { OdsBand } from "@/components/OdsBand";
 import { AccountSuspendedError, useSession } from "@/components/SessionProvider";
 import {
@@ -414,6 +415,16 @@ export function InitiativeForm({
       <OdsBand className="h-1.5" />
 
       <div className="divide-y divide-[var(--color-header-border)] px-6 sm:px-8">
+        <p className="py-6 text-sm text-[var(--color-muted)]">
+          <strong className="text-[var(--color-app-foreground)]">
+            Estas informações ficam visíveis para qualquer pessoa com conta no
+            ODS Quiz,
+          </strong>{" "}
+          inclusive o endereço e os contatos. Prefira contatos da própria
+          iniciativa aos pessoais. Veja as regras nos{" "}
+          <NewTabLink href="/terms">termos de uso</NewTabLink>.
+        </p>
+
         <FieldGroup legend="Sobre a iniciativa" number={1}>
           {aboutFields.map(renderField)}
           {initiative ? renderField(descriptionField) : null}

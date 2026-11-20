@@ -8,7 +8,7 @@ export function Footer() {
   return (
     <footer className="text-[var(--color-app-foreground)]">
       <OdsBand className="h-1.5" />
-      <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 text-sm sm:px-6 md:grid-cols-[2fr_1fr_1.4fr]">
+      <div className="mx-auto grid max-w-6xl gap-10 px-4 pb-10 pt-14 text-sm sm:px-6 md:grid-cols-[2fr_1fr_1.4fr]">
         <div>
           <p className="font-display text-2xl font-extrabold">ODS Quiz</p>
           <p className="mt-3 max-w-sm text-[var(--color-muted)]">
@@ -54,6 +54,21 @@ export function Footer() {
             .
           </p>
         </div>
+      </div>
+
+      <div className="mx-auto max-w-6xl px-4 pb-14 text-sm sm:px-6">
+        <ul className="flex flex-wrap gap-x-6 gap-y-2 border-t border-[var(--color-header-border)] pt-6 text-[var(--color-muted)]">
+          <li>
+            <Link href="/privacy" className={linkClassName}>
+              Política de privacidade
+            </Link>
+          </li>
+          <li>
+            <Link href="/terms" className={linkClassName}>
+              Termos de uso
+            </Link>
+          </li>
+        </ul>
       </div>
     </footer>
   );

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { LoginRequired } from "@/components/LoginRequired";
+import { NewTabLink } from "@/components/NewTabLink";
 import { OdsBand } from "@/components/OdsBand";
 import { PageHeader } from "@/components/PageHeader";
 import { AccountSuspendedError, useSession } from "@/components/SessionProvider";
@@ -138,7 +139,12 @@ export default function Quiz() {
       ) : questions.length > 0 ? (
         <div className="mt-12">
           <div className="mx-auto max-w-6xl px-4 sm:px-6">
-            <ol aria-label="Perguntas do quiz" className="grid max-w-4xl gap-4">
+            <p className="max-w-4xl text-sm text-[var(--color-muted)]">
+              Ao enviar, suas respostas e sua pontuação ficam guardadas na sua
+              conta. Veja como usamos esses dados na{" "}
+              <NewTabLink href="/privacy">política de privacidade</NewTabLink>.
+            </p>
+            <ol aria-label="Perguntas do quiz" className="mt-6 grid max-w-4xl gap-4">
               {questions.map((question) => (
                 <QuestionCard
                   key={question.id}

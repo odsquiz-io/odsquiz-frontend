@@ -28,4 +28,6 @@ export const dangerButton = `inline-flex min-h-12 items-center justify-center ro
 
 export const secondaryButton = `inline-flex min-h-12 items-center justify-center rounded-md border-2 border-[var(--color-app-foreground)] px-6 text-base font-bold transition hover:bg-[var(--color-app-foreground)] hover:text-[var(--color-app-background)] ${focusRing}`;
 
+export const textLink = `font-bold text-[var(--color-app-foreground)] underline underline-offset-4 transition hover:text-[var(--color-link-hover)] ${focusRing}`;
+
 export const stagger = (index: number) => ({ "--i": index }) as CSSProperties;
