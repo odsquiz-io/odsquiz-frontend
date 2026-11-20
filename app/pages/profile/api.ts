@@ -4,10 +4,7 @@ import {
   type SessionUser,
 } from "@/components/SessionProvider";
 
-type AccountUpdate = Pick<
-  SessionUser,
-  "name" | "address" | "cep" | "city" | "state" | "lat" | "lon"
->;
+type AccountUpdate = Pick<SessionUser, "name" | "cep" | "city" | "state">;
 
 export async function updateAccount(account: AccountUpdate, token: string) {
   const response = await fetch("/api/auth/me", {

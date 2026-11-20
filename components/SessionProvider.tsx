@@ -8,12 +8,9 @@ export type SessionUser = {
   name: string;
   email: string;
   role: "user" | "admin";
-  address: string;
   cep: string;
   city: string;
   state: string;
-  lat: number;
-  lon: number;
   points: number;
   created_at: string;
 };

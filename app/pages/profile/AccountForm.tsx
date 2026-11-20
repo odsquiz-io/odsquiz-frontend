@@ -15,17 +15,17 @@ import {
   selectChevron,
   surface,
 } from "@/components/styles";
-import { type Coordinates, formatCep, lookupCep, states } from "@/lib/cep";
+import { formatCep, lookupCep, states } from "@/lib/cep";
 import { updateAccount } from "./api";
 
-type AccountField = "name" | "cep" | "address" | "city" | "state";
+type AccountField = "name" | "cep" | "city" | "state";
 
 type AccountValues = Record<AccountField, string>;
 
 type AccountFieldErrors = Partial<Record<AccountField, string>>;
 
 const hints: Partial<Record<AccountField, string>> = {
-  cep: "Digite os 8 números e clique em Buscar para preencher o endereço, a cidade e o estado.",
+  cep: "Digite os 8 números e clique em Buscar para preencher a cidade e o estado.",
 };
 
 const disabledButton = "disabled:cursor-not-allowed disabled:opacity-60";
@@ -67,11 +67,9 @@ export function AccountForm({
   const [form, setForm] = useState<AccountValues>({
     name: user.name,
     cep: formatCep(user.cep) ?? "",
-    address: user.address,
     city: user.city,
     state: user.state,
   });
-  const [coordinates, setCoordinates] = useState<Coordinates>();
   const [errors, setErrors] = useState<AccountFieldErrors>({});
   const [lookingUp, setLookingUp] = useState(false);
   const [lookupMessage, setLookupMessage] = useState("");
@@ -89,10 +87,6 @@ export function AccountForm({
   function update(field: AccountField, value: string) {
     setForm((currentForm) => ({ ...currentForm, [field]: value }));
     clearError(field);
-
-    if (field === "cep") {
-      setCoordinates(undefined);
-    }
   }
 
   async function handleLookup() {
@@ -105,14 +99,11 @@ export function AccountForm({
       setForm((currentForm) => ({
         ...currentForm,
         cep: formatCep(found.cep) ?? currentForm.cep,
-        address:
-          [found.street, found.district].filter(Boolean).join(", ") || currentForm.address,
         city: found.city || currentForm.city,
         state: found.state || currentForm.state,
       }));
-      setCoordinates(found.coordinates);
       clearError("cep");
-      setLookupMessage("CEP encontrado. Confira o endereço, a cidade e o estado.");
+      setLookupMessage("CEP encontrado. Confira a cidade e o estado.");
     } catch (error) {
       const lookupError =
         error instanceof Error ? error.message : "Não foi possível buscar esse CEP.";
@@ -146,12 +137,9 @@ export function AccountForm({
       const updatedUser = await updateAccount(
         {
           name: form.name.trim(),
-          address: form.address.trim(),
           cep: form.cep.replace(/\D/g, ""),
           city: form.city.trim(),
           state: form.state,
-          lat: coordinates?.lat ?? user.lat,
-          lon: coordinates?.lon ?? user.lon,
         },
         token,
       );
@@ -242,10 +230,6 @@ export function AccountForm({
             <p role="status" className="sr-only">
               {lookupMessage}
             </p>
-          </Field>
-
-          <Field error={errors.address} field="address" label="Endereço">
-            <input {...controlProps("address")} type="text" autoComplete="street-address" />
           </Field>
 
           <div className="grid gap-5 sm:grid-cols-[1fr_10rem]">

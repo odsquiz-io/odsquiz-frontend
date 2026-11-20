@@ -23,7 +23,6 @@ export function AccountDetails({
   const details = [
     { label: "Nome", value: user.name },
     { label: "E-mail", value: user.email },
-    { label: "Endereço", value: user.address },
     { label: "Cidade", value: cityState(user) },
     { label: "CEP", value: formatCep(user.cep) },
     {
