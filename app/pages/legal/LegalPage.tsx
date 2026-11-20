@@ -2,19 +2,18 @@ import type { ReactNode } from "react";
 import { OdsBand } from "@/components/OdsBand";
 import { PageHeader } from "@/components/PageHeader";
 import { surface, textLink } from "@/components/styles";
+import { legalEffectiveDate } from "@/lib/legal";
 
 const CONTACT_EMAIL = "privacidade@odsquiz.com";
 
 export function LegalPage({
   children,
-  effectiveDate,
   intro,
   label,
   summary,
   title,
 }: {
   children: ReactNode;
-  effectiveDate: string;
   intro: string;
   label: string;
   summary: ReactNode[];
@@ -27,7 +26,7 @@ export function LegalPage({
           {intro}
         </PageHeader>
         <p className="mt-6 text-sm font-bold text-[var(--color-muted)]">
-          Em vigor desde {effectiveDate}.
+          Em vigor desde {legalEffectiveDate}.
         </p>
 
         <section

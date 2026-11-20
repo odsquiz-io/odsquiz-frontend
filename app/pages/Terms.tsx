@@ -1,15 +1,15 @@
 import Link from "next/link";
 import { textLink } from "@/components/styles";
+import { MINIMUM_AGE } from "@/lib/legal";
 import { ContactEmail, LegalList, LegalPage, LegalSection } from "./legal/LegalPage";
 
 export default function Terms() {
   return (
     <LegalPage
-      effectiveDate="20 de novembro de 2026"
       intro="Ao criar uma conta ou usar o ODS Quiz, você concorda com estas regras. Elas existem para manter o site útil e seguro para todo mundo."
       label="Termos de uso"
       summary={[
-        "O ODS Quiz é gratuito, não tem fins comerciais e é para pessoas com 13 anos ou mais.",
+        `O ODS Quiz é gratuito, não tem fins comerciais e é para pessoas com ${MINIMUM_AGE} anos ou mais.`,
         "Use dados verdadeiros e mantenha sua senha em segredo.",
         "Cadastre só iniciativas reais e publique contatos e fotos apenas com autorização.",
         "Conteúdo falso, ofensivo ou ilegal pode ser removido, e a conta, suspensa.",
@@ -28,8 +28,9 @@ export default function Terms() {
       <LegalSection id="who" title="Quem pode usar">
         <LegalList>
           <li>
-            Pessoas com 13 anos ou mais. Se você tem menos de 18 anos, converse
-            com seus pais ou responsáveis sobre o uso do site.
+            Pessoas com {MINIMUM_AGE} anos ou mais. Ao criar a conta, você
+            declara ter essa idade. Se você tem menos de 18 anos, converse com
+            seus pais ou responsáveis sobre o uso do site.
           </li>
           <li>Cada pessoa pode ter uma única conta, com dados verdadeiros.</li>
         </LegalList>
