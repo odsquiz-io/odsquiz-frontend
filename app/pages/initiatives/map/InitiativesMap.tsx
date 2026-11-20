@@ -56,14 +56,7 @@ export function InitiativesMap({ initiatives }: { initiatives: Initiative[] }) {
 
 function useHome(): Home {
   const { status, user } = useSession();
-  const lat = user?.lat ?? 0;
-  const lon = user?.lon ?? 0;
-  // A CEP lookup without coordinates is saved as 0, 0.
-  const saved = useMemo<LatLngTuple | null>(
-    () => (lat !== 0 || lon !== 0 ? [lat, lon] : null),
-    [lat, lon],
-  );
-  const query = !saved && user?.city && user.state ? `${user.city}, ${user.state}, Brasil` : null;
+  const query = user?.city && user.state ? `${user.city}, ${user.state}, Brasil` : null;
   const [geocoded, setGeocoded] = useState<{ query: string; home: LatLngTuple | null }>();
 
   useEffect(() => {
@@ -90,8 +83,8 @@ function useHome(): Home {
     return undefined;
   }
 
-  if (saved || !query) {
-    return saved;
+  if (!query) {
+    return null;
   }
 
   return geocoded?.query === query ? geocoded.home : undefined;

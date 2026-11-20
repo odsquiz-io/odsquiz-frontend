@@ -17,8 +17,8 @@ import {
   surface,
 } from "@/components/styles";
 import { storeAuthToken } from "@/lib/auth";
-import type { Coordinates } from "@/lib/cep";
 import { lookupCep, states } from "@/lib/cep";
+import { LEGAL_VERSION, MINIMUM_AGE } from "@/lib/legal";
 
 type AuthMode = "login" | "signup";
 
@@ -26,7 +26,7 @@ type AuthFormProps = {
   mode: AuthMode;
 };
 
-type AuthField = "name" | "email" | "password" | "cep" | "address" | "city" | "state";
+type AuthField = "name" | "email" | "password" | "cep" | "city" | "state" | "terms";
 
 type AuthFieldErrors = Partial<Record<AuthField, string>>;
 
@@ -36,6 +36,7 @@ type ApiErrorCode =
   | "internal_error"
   | "invalid_credentials"
   | "invalid_request"
+  | "terms_not_accepted"
   | "user_not_found";
 
 type AuthResponse = {
@@ -58,6 +59,7 @@ const duplicateEmailMessage = "Já existe uma conta com este e-mail.";
 const invalidCredentialsMessage = "E-mail ou senha incorretos.";
 const unavailableMessage =
   "O serviço de contas está indisponível no momento. Tente de novo em instantes.";
+const termsMessage = `Para criar a conta, confirme que tem ${MINIMUM_AGE} anos ou mais e aceita os termos.`;
 
 function invalidRequestMessage(mode: AuthMode) {
   return mode === "signup"
@@ -82,6 +84,7 @@ function getApiErrorCode(payload: unknown): ApiErrorCode | undefined {
     code === "internal_error" ||
     code === "invalid_credentials" ||
     code === "invalid_request" ||
+    code === "terms_not_accepted" ||
     code === "user_not_found"
   ) {
     return code;
@@ -144,6 +147,10 @@ function getApiErrorResult(
     return { message: invalidRequestMessage(mode) };
   }
 
+  if (code === "terms_not_accepted") {
+    return { fieldErrors: { terms: termsMessage }, message: "Corrija os campos destacados." };
+  }
+
   if (code === "user_not_found") {
     return { message: "Não encontramos essa conta." };
   }
@@ -170,7 +177,6 @@ async function readResponse(response: Response): Promise<unknown> {
 }
 
 function validateAuthForm({
-  address,
   cepDigits,
   city,
   email,
@@ -178,8 +184,8 @@ function validateAuthForm({
   name,
   password,
   state,
+  termsAccepted,
 }: {
-  address: string;
   cepDigits: string;
   city: string;
   email: string;
@@ -187,6 +193,7 @@ function validateAuthForm({
   name: string;
   password: string;
   state: string;
+  termsAccepted: boolean;
 }) {
   const errors: AuthFieldErrors = {};
   const trimmedEmail = email.trim();
@@ -211,16 +218,16 @@ function validateAuthForm({
     errors.cep = "Informe um CEP com 8 números.";
   }
 
-  if (isSignup && !address.trim()) {
-    errors.address = "Informe seu endereço.";
-  }
-
   if (isSignup && !city.trim()) {
     errors.city = "Informe sua cidade.";
   }
 
   if (isSignup && !state) {
     errors.state = "Selecione seu estado.";
+  }
+
+  if (isSignup && !termsAccepted) {
+    errors.terms = termsMessage;
   }
 
   return errors;
@@ -233,10 +240,9 @@ export function AuthForm({ mode }: AuthFormProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [cep, setCep] = useState("");
-  const [address, setAddress] = useState("");
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
-  const [coordinates, setCoordinates] = useState<Coordinates>();
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [isLookingUpCep, setIsLookingUpCep] = useState(false);
   const [cepMessage, setCepMessage] = useState("");
   const [status, setStatus] = useState<"idle" | "submitting" | "success">("idle");
@@ -262,26 +268,17 @@ export function AuthForm({ mode }: AuthFormProps) {
 
   async function handleCepLookup() {
     setCepMessage("");
-    setCoordinates(undefined);
     setIsLookingUpCep(true);
 
     try {
       const found = await lookupCep(cep);
-      const street = [found.street, found.district].filter(Boolean).join(", ");
 
-      setAddress((currentAddress) => street || currentAddress);
       setCity((currentCity) => found.city || currentCity);
       setState((currentState) => found.state || currentState);
-      setCoordinates(found.coordinates);
       clearFieldError("cep");
-      clearFieldError("address");
       clearFieldError("city");
       clearFieldError("state");
-      setCepMessage(
-        street
-          ? "Endereço encontrado. Confira e acrescente o número."
-          : "Cidade encontrada. Preencha a rua, o número e o bairro.",
-      );
+      setCepMessage("Cidade e estado preenchidos. Confira se estão certos.");
     } catch (error) {
       flushSync(() =>
         setFieldErrors((currentErrors) => ({
@@ -301,7 +298,6 @@ export function AuthForm({ mode }: AuthFormProps) {
 
     const cepDigits = cep.replace(/\D/g, "");
     const validationErrors = validateAuthForm({
-      address,
       cepDigits,
       city,
       email,
@@ -309,6 +305,7 @@ export function AuthForm({ mode }: AuthFormProps) {
       name,
       password,
       state,
+      termsAccepted,
     });
 
     if (Object.keys(validationErrors).length > 0) {
@@ -324,7 +321,7 @@ export function AuthForm({ mode }: AuthFormProps) {
     setStatus("submitting");
 
     const body = isSignup
-      ? { name, email, password, address, cep: cepDigits, city, state, ...coordinates }
+      ? { name, email, password, cep: cepDigits, city, state, terms_version: LEGAL_VERSION }
       : { email, password };
 
     try {
@@ -441,14 +438,13 @@ export function AuthForm({ mode }: AuthFormProps) {
                 autoComplete="postal-code"
                 error={fieldErrors.cep}
                 field="cep"
-                hint="Digite os 8 números e clique em Buscar para preencher o endereço, a cidade e o estado."
+                hint="Digite os 8 números e clique em Buscar para preencher a cidade e o estado."
                 inputMode="numeric"
                 label="CEP"
                 type="text"
                 value={cep}
                 onChange={(value) => {
                   setCep(value);
-                  setCoordinates(undefined);
                   setCepMessage("");
                   clearFieldError("cep");
                 }}
@@ -464,20 +460,6 @@ export function AuthForm({ mode }: AuthFormProps) {
                   {cepMessage}
                 </p>
               </Field>
-
-              <Field
-                autoComplete="street-address"
-                error={fieldErrors.address}
-                field="address"
-                hint="Depois de buscar o CEP, acrescente o número e, se houver, o complemento."
-                label="Endereço"
-                type="text"
-                value={address}
-                onChange={(value) => {
-                  setAddress(value);
-                  clearFieldError("address");
-                }}
-              />
 
               <Field
                 autoComplete="address-level2"
@@ -502,6 +484,15 @@ export function AuthForm({ mode }: AuthFormProps) {
                 onChange={(value) => {
                   setState(value);
                   clearFieldError("state");
+                }}
+              />
+
+              <TermsCheckbox
+                checked={termsAccepted}
+                error={fieldErrors.terms}
+                onChange={(checked) => {
+                  setTermsAccepted(checked);
+                  clearFieldError("terms");
                 }}
               />
             </>
@@ -535,15 +526,6 @@ export function AuthForm({ mode }: AuthFormProps) {
               ? "Criar conta"
               : "Entrar"}
         </button>
-
-        {isSignup ? (
-          <p className="mt-4 text-sm text-[var(--color-muted)]">
-            Ao criar a conta, você concorda com os{" "}
-            <NewTabLink href="/terms">termos de uso</NewTabLink>. Veja como
-            cuidamos dos seus dados na{" "}
-            <NewTabLink href="/privacy">política de privacidade</NewTabLink>.
-          </p>
-        ) : null}
       </form>
 
       <p className="border-t border-[var(--color-header-border)] px-6 py-5 text-[var(--color-muted)] sm:px-8">
@@ -645,6 +627,44 @@ function Field({
       {children}
       {error ? (
         <p id={`${id}-error`} className="mt-2 text-sm font-semibold text-[var(--color-error)]">
+          {error}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function TermsCheckbox({
+  checked,
+  error,
+  onChange,
+}: {
+  checked: boolean;
+  error?: string;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <div>
+      <div className="flex items-start gap-3">
+        <input
+          id="auth-terms"
+          name="terms"
+          type="checkbox"
+          required
+          checked={checked}
+          aria-invalid={Boolean(error)}
+          aria-describedby={error ? "auth-terms-error" : undefined}
+          onChange={(event) => onChange(event.target.checked)}
+          className={`mt-0.5 size-5 shrink-0 accent-[var(--color-app-foreground)] ${focusRing}`}
+        />
+        <label htmlFor="auth-terms" className="text-sm">
+          Tenho {MINIMUM_AGE} anos ou mais e aceito os{" "}
+          <NewTabLink href="/terms">termos de uso</NewTabLink> e a{" "}
+          <NewTabLink href="/privacy">política de privacidade</NewTabLink>.
+        </label>
+      </div>
+      {error ? (
+        <p id="auth-terms-error" className="mt-2 text-sm font-semibold text-[var(--color-error)]">
           {error}
         </p>
       ) : null}

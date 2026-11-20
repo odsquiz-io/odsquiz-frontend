@@ -1,13 +1,14 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { textLink } from "@/components/styles";
+import { MINIMUM_AGE } from "@/lib/legal";
 import { ContactEmail, LegalList, LegalPage, LegalSection } from "./legal/LegalPage";
 
 const dataUses = [
   {
     title: "Conta",
-    data: "Nome, e-mail, senha, CEP, endereço, cidade, estado e as coordenadas aproximadas do CEP. A senha é guardada embaralhada, em um formato que não permite descobri-la.",
-    purpose: "Criar e proteger sua conta, mostrar seu perfil e gerar estatísticas por cidade.",
+    data: "Nome, e-mail, senha, CEP, cidade e estado, além da versão dos termos que você aceitou e da data do aceite. A senha é guardada embaralhada, em um formato que não permite descobri-la.",
+    purpose: "Criar e proteger sua conta, mostrar seu perfil, gerar estatísticas por cidade e registrar que você aceitou os termos.",
     basis: "Cumprir os termos de uso, que são o contrato entre você e o ODS Quiz (LGPD, art. 7º, V).",
     retention: "Enquanto sua conta existir.",
   },
@@ -58,7 +59,6 @@ const dataUses = [
 export default function Privacy() {
   return (
     <LegalPage
-      effectiveDate="20 de novembro de 2026"
       intro="Quais dados o ODS Quiz guarda, para que usa, com quem compartilha e como você pode controlar tudo isso."
       label="Política de privacidade"
       summary={[
@@ -87,13 +87,14 @@ export default function Privacy() {
 
       <LegalSection id="age" title="Quem pode usar">
         <p>
-          O ODS Quiz é para pessoas com 13 anos ou mais. Se você tem menos de 18
-          anos, converse com seus pais ou responsáveis sobre o uso do site.
+          O ODS Quiz é para pessoas com {MINIMUM_AGE} anos ou mais, idade que
+          você declara ao criar a conta. Se você tem menos de 18 anos, converse
+          com seus pais ou responsáveis sobre o uso do site.
         </p>
         <p>
           O site não tem anúncios nem bate-papo, e os dados de adolescentes são
           sempre tratados no melhor interesse deles. Se soubermos que uma conta é
-          de alguém com menos de 13 anos, ela será excluída.
+          de alguém com menos de {MINIMUM_AGE} anos, ela será excluída.
         </p>
         <p>
           As regras para usar o site estão nos{" "}
@@ -154,12 +155,13 @@ export default function Privacy() {
         <LegalList>
           <li>
             <strong>AwesomeAPI e BrasilAPI</strong>: recebem o CEP digitado, para
-            preencher o endereço.
+            preencher a cidade, o estado e, nas iniciativas, o endereço.
           </li>
           <li>
-            <strong>OpenStreetMap</strong>: fornece as imagens do mapa e, quando
-            a busca do CEP não traz a localização, recebe o endereço desse CEP
-            para encontrar a iniciativa no mapa.
+            <strong>OpenStreetMap</strong>: fornece as imagens do mapa, recebe
+            sua cidade e seu estado para mostrar primeiro as iniciativas da sua
+            região e, quando a busca do CEP de uma iniciativa não traz a
+            localização, recebe o endereço desse CEP para encontrá-la no mapa.
           </li>
         </LegalList>
         <p>
@@ -225,7 +227,7 @@ export default function Privacy() {
           <li>reclamar à ANPD.</li>
         </LegalList>
         <p>
-          Você pode corrigir nome, CEP, endereço, cidade e estado no seu perfil.
+          Você pode corrigir nome, CEP, cidade e estado no seu perfil.
           Para os outros pedidos, como uma cópia dos seus dados ou a exclusão da
           conta, escreva para <ContactEmail /> usando o e-mail da sua conta.
           Respondemos em até 15 dias, sem custo.
