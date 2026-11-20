@@ -158,8 +158,8 @@ export default function Privacy() {
           </li>
           <li>
             <strong>OpenStreetMap</strong>: fornece as imagens do mapa e, quando
-            o CEP não traz a localização, recebe o endereço da iniciativa para
-            encontrá-la no mapa.
+            a busca do CEP não traz a localização, recebe o endereço desse CEP
+            para encontrar a iniciativa no mapa.
           </li>
         </LegalList>
         <p>
