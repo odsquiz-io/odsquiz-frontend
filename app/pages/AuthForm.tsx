@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { ChangeEvent, ReactNode, SyntheticEvent } from "react";
 import { useState } from "react";
 import { flushSync } from "react-dom";
+import { NewTabLink } from "@/components/NewTabLink";
 import { OdsBand } from "@/components/OdsBand";
 import {
   control,
@@ -534,6 +535,15 @@ export function AuthForm({ mode }: AuthFormProps) {
               ? "Criar conta"
               : "Entrar"}
         </button>
+
+        {isSignup ? (
+          <p className="mt-4 text-sm text-[var(--color-muted)]">
+            Ao criar a conta, você concorda com os{" "}
+            <NewTabLink href="/terms">termos de uso</NewTabLink>. Veja como
+            cuidamos dos seus dados na{" "}
+            <NewTabLink href="/privacy">política de privacidade</NewTabLink>.
+          </p>
+        ) : null}
       </form>
 
       <p className="border-t border-[var(--color-header-border)] px-6 py-5 text-[var(--color-muted)] sm:px-8">
